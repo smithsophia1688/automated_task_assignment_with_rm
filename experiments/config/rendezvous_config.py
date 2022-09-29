@@ -1,3 +1,6 @@
+import sys
+sys.path.append('..')
+
 from tester.tester import Tester
 from tester.tester_params import TestingParameters
 from tester.learning_params import LearningParameters
@@ -14,11 +17,11 @@ def rendezvous_config(num_times, num_agents):
     """
     base_file_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 
-    joint_rm_file = os.path.join(base_file_path, 'experiments', 'gridworld_many_agent_rendezvous', '{}_agent_rendezvous_rm.txt'.format(num_agents))
+    joint_rm_file = os.path.join(base_file_path, 'data', 'saved_reward_machines', 'gridworld_many_agent_rendezvous', '{}_agent_rendezvous_rm.txt'.format(num_agents))
 
     local_rm_files = []
     for i in range(num_agents):
-        local_rm_string = os.path.join(base_file_path, 'experiments', 'gridworld_many_agent_rendezvous', 'coordination_experiment_agent{}.txt'.format(i+1))
+        local_rm_string = os.path.join(base_file_path, 'data', 'saved_reward_machines', 'gridworld_many_agent_rendezvous', 'coordination_experiment_agent{}.txt'.format(i+1))
         local_rm_files.append(local_rm_string)
 
     step_unit = 1000

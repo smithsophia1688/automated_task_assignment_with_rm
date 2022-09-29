@@ -1,3 +1,6 @@
+import sys
+sys.path.append("..")
+
 from tester.tester import Tester
 from tester.tester_params import TestingParameters
 from tester.learning_params import LearningParameters
@@ -14,11 +17,11 @@ def buttons_config(num_times, num_agents):
     """
     base_file_path = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 
-    joint_rm_file = os.path.join(base_file_path, 'experiments', 'buttons', 'team_buttons_rm.txt')
+    joint_rm_file = os.path.join(base_file_path, 'data', 'saved_reward_machines', 'buttons', 'team_buttons_rm.txt')
 
     local_rm_files = []
     for i in range(num_agents):
-        local_rm_string = os.path.join(base_file_path, 'experiments', 'buttons', 'buttons_rm_agent_{}.txt'.format(i+1))
+        local_rm_string = os.path.join(base_file_path, 'data', 'saved_reward_machines', 'buttons', 'buttons_rm_agent_{}.txt'.format(i+1))
         local_rm_files.append(local_rm_string)
 
     step_unit = 1000

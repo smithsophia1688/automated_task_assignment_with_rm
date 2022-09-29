@@ -175,9 +175,6 @@ def run_multi_agent_qlearning_test(agent_list,
 
     if tester.experiment == 'rendezvous':
         testing_env = MultiAgentGridWorldEnv(tester.rm_test_file, num_agents, tester.env_settings)
-    if tester.experiment == 'search_and_rescue':
-        target_region = np.random.choice([0,1,2,3,4])
-        testing_env = SearchAndRescueEnv(tester.rm_test_file, target_region, tester.env_settings)
     if tester.experiment == 'buttons':
         testing_env = MultiAgentButtonsEnv(tester.rm_test_file, num_agents, tester.env_settings)
 
