@@ -1,6 +1,9 @@
 # holds node class which builds the tree
 # also runs the depth first tree search via recursion 
 
+import task_assignment.helper_functions as hf
+from reward_machines.sparse_reward_machine import SparseRewardMachine as sparse
+import task_assignment.bisimilarity_check as bs
 class Node:
     def __init__(self, name = None, children = None, value = -1, knapsack = None, future_events = None, all_events = None, depth = 0):
         if name: ## 'root' -> next_event_name= self.future_events[0]
@@ -32,8 +35,6 @@ class Node:
             self.all_events = set()
         self.depth = depth ## 0 in 'root' (not passed) -> new_depth (depth +1)
 
-
-
     def __repr__(self):
         s =  "(" + str(self.name) + ", " + str(self.value) + ")"
         return s 
@@ -62,20 +63,20 @@ class Node:
         No forbidden set since tree search already has forbidden set in knapsack and no forbidden events in tree search levels
 
         '''
-        event_spaces, agent_event_spaces_dict = get_event_spaces_from_knapsack(configs.all_events, self.knapsack)
+        event_spaces, agent_event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, self.knapsack)
         
         # Get projected rm to put in parallel 
 
         rms = []
         for es in event_spaces:
-            rm_p = sparse.project_rm(es, configs.rm) 
+            rm_p = bs.project_rm(es, configs.rm) 
             rms.append(rm_p)
 
-        rm_parallel = sparse.put_many_in_parallel(configs.rms) 
+        rm_parallel = bs.put_many_in_parallel(rms) 
 
         is_decomp = True
         if self.value != 0: # only check if you changed something
-            is_decomp = sparse.is_decomposable(configs.rm, rm_parallel, agent_event_spaces_dict, configs.num_agents, enforced_set = configs.enforced_set)
+            is_decomp = bs.is_decomposable(configs.rm, rm_parallel, agent_event_spaces_dict, configs.num_agents, enforced_set = configs.enforced_set)
 
         return is_decomp
 
@@ -86,12 +87,12 @@ class Node:
         - shared event score in particluar needs to be normalized some how 
         '''
 
-        event_spaces, event_spaces_dict = get_event_spaces_from_knapsack(configs.all_events, self.knapsack)
+        event_spaces, event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, self.knapsack)
 
         se  = configs.get_shared_event_score(self.knapsack)
         f = configs.get_fairness_score(self.knapsack, event_spaces_dict)
         u = configs.get_utility_score(self.knapsack)
-        se_weight, f_weight, u_weight = weights
+        se_weight, f_weight, u_weight = configs.weights
         score = se * se_weight + f * f_weight + u * u_weight
         #print(f"se score is:, {se} , f score is: {f}, u score is: {u}, for a total of {score}")
         

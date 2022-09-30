@@ -1,3 +1,4 @@
+
 class SparseRewardMachine:
     def __init__(self,file=None):
         # <U,u0,delta_u,delta_r>
@@ -7,7 +8,13 @@ class SparseRewardMachine:
         self.delta_u = {} # state-transition function
         self.delta_r = {} # reward-transition function
         self.T = set()    # set of terminal states (they are automatically detected)
+        self.equivalence_class_name_dict = {} # dict {name: equivalence class} Used in projections only 
+
         if file is not None:
+            #print('loading file')
+            #cwd = os.getcwd()  # Get the current working directory (cwd)
+            #files = os.listdir(cwd)  # Get all the files in that directory
+            #print("Files in %r: %s" % (cwd, files))
             self._load_reward_machine(file)
         
     def __repr__(self):
@@ -20,6 +27,9 @@ class SparseRewardMachine:
                                                         event,
                                                         self.delta_r[trans_init_state][trans_end_state],
                                                         trans_end_state)
+        if self.equivalence_class_name_dict != {}:
+            s += 'State Names for Equivalence Classes: \n'
+            s += str(self.equivalence_class_name_dict) + '\n'
         return s
 
     # Public methods -----------------------------------
@@ -66,6 +76,26 @@ class SparseRewardMachine:
                 is_event_available = True
         return is_event_available
 
+    # NEW METHOD
+    def write_rm_file(self, file_location, file_name):
+        '''
+        file_name : string with destination of file 
+        '''
+        file = file_location + file_name 
+        with open(file, 'w+') as f:
+            s = str(self.u0) + '  # Initial state \n'
+            f.write(s)
+            for trans_init_state in self.delta_u:
+                for event in self.delta_u[trans_init_state]:
+                    trans_end_state = self.delta_u[trans_init_state][event]
+                    r = self.delta_r[trans_init_state][trans_end_state]
+
+                    rm_line = f"({trans_init_state}, {trans_end_state}, '{event}', {r}) \n"
+                    f.write(rm_line)
+                    
+
+
+
     # Private methods -----------------------------------
 
     def _load_reward_machine(self, file):
@@ -90,7 +120,7 @@ class SparseRewardMachine:
         # adding transitions
         for e in lines[1:]:
             self._add_transition(*eval(e))
-            self.events.add(eval(e)[2]) # By convention, the event is in the spot indexed by 2
+            self.events.add(eval(e)[2]) # By convention, the event is in the spot #indexed by 2
         # adding terminal states
         for u1 in self.U:
             if self._is_terminal(u1):
@@ -136,3 +166,52 @@ class SparseRewardMachine:
         if u1 not in self.delta_r:
             self.delta_r[u1] = {}
         self.delta_r[u1][u2] = reward
+    
+    def add_transition_and_reward_only(self, u1, u2, event, reward):
+        ''' 
+        Similar to _add_transition, this function is public and called when you project and parallelize reward machines. 
+        Differences between these two functions:
+            add_transition expects:
+                (u1, u2) to already be in the state space
+                event to already be in the event space
+
+        Inputs:
+            u1: element of rm.U
+            u2: element of rm.U
+            event: string, element of rm.events
+            reward: int or float (probably 0 or 1)
+        '''
+        # add transition 
+        if u1 not in self.delta_u:
+            self.delta_u[u1] = {}
+        if event in self.delta_u[u1]:
+            if self.delta_u[u1][event] != u2:
+                raise Exception('Trying to make rm transition function non-deterministic.')
+        if event not in self.delta_u[u1]:
+            self.delta_u[u1][event] = u2
+
+        # Adding reward-transition to delta_r
+        if u1 not in self.delta_r:
+            self.delta_r[u1] = {}
+        self.delta_r[u1][u2] = reward
+    
+    def get_name_from_class(self, cl):
+        '''
+        This function finds the "name" of a state that corresponds to a 
+        particular class. 
+
+        k is a key in self.equivalence_class_name_dict 
+        if (k, cl) is an item of self.equivalence_class_name_dict, return k
+        Inputs: 
+            cl: (set), element of an equivalence class, value in self.equivalence_class_name_dict
+       
+        '''
+        dict = self.equivalence_class_name_dict
+        name_full = [k for k in dict if dict[k]==cl] # should have len = 1
+
+        if len(name_full) == 0:
+            sr = 'class ' + str(cl) + 'was not in the equivalence_class_name_dict for this reward machine'
+            raise Exception(sr)
+
+        return name_full[0]
+

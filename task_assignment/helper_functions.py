@@ -3,11 +3,15 @@
 
 def get_event_spaces_from_knapsack(all_events, knapsack = None): 
     '''
-    I feel like this is not very good code in this.
-    takes all (event, agent) pairs, removes those in knapsack
-    and converts it to {agent: [event]}
-    and also [{events for agent 1}, {events for agent 2}, ... ]
+    all_events = {(event, agent)..}
+    knapsack = {(e,a)}, knapsack \subset all_events
 
+    we want the (a,e) pairs from all_events that are not in the knapsack 
+
+    we want them in the form:
+        {agent: [events]}
+    and 
+        [{events for agent 1}, {events for agent 2}, ... ]
     '''
     if not knapsack:
         knapsack = set()

@@ -1,5 +1,8 @@
 import itertools 
-import helper_functions as hf
+print("AT ONE b")
+import task_assignment.helper_functions as hf
+print("AT ONC c")
+
 ### Holds Configurations class that holds the task assignment experiment details and decomposition metric
 
 class Configurations():
@@ -21,12 +24,15 @@ class Configurations():
             rm: SparseRewardMachine type
             num_agents: int
             agents: [0, 1,.. ] list of agent names
-            max_knapsack_size = |rm.events| x # agents - |forbidden assignments|
+            
             weights: [shared events weight, fairness weight, utility weight]
+            
             enforced_set = {(e,a)} event assignments that must be kept (DO NOT PUT IN KNAPSACK)
             forbidden_set = {(e,a)} event assignments that are not allowed (MUST BE PUT IN KNAPSACK)
-            all_events = {(e,a) } rm.events X agents  \ (remove forbidden assignments if any)
-            future_events = [all_events] THIS SETS THE ORDER OF THE TREE SEARCH. tree nodes use this to define the the "tree to come"
+            all_events = {(e,a)} rm.events X agents  
+            future_events = [all_events - forbidden_set - enforced_set] THIS SETS THE ORDER OF THE TREE SEARCH. tree nodes use this to define the the "tree to come"
+            
+            max_knapsack_size = |rm.events| x # agents  - # enforced_set
             agent_utility_function: {agent: {event: utility} }
             total_utility_score: sum of all the agents utility 
 
@@ -53,13 +59,15 @@ class Configurations():
             if type(forbidden_set) == dict: # HACK, should just make the function take a dict lol
                 forbidden_set = hf.get_sack_from_dict(forbidden_set)
             self.forbidden_set = forbidden_set
-            self.all_events = self.all_events - forbidden_set
-            self.future_events = list(self.all_events)
         else:
             self.forbidden_set = set()
-            self.future_events = list(self.all_events)
         
-        self.max_knapsack_size = len(self.all_events)
+        tree_events = self.all_events - self.forbidden_set - self.enforced_set
+        self.future_events = list(tree_events)
+
+        self.max_knapsack_size = len(self.all_events) - len(self.enforced_set)
+        if len(self.enforced_set.intersection(self.forbidden_set)) != 0:
+            raise Exception("Your enforced assingments and forbidden assignments are not disjoint!!")
 
         if agent_utility_function:
             self.agent_utility_function = agent_utility_function
