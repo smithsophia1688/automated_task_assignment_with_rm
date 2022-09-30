@@ -20,8 +20,9 @@ def get_best_decomposition(configs, file_location, file_name):
     
     # Execute Tree search 
     bd = root.small_traverse(configs)
-    
-    event_spaces, _ = hf.get_event_spaces_from_knapsack(configs.all_events, bd[1][0]) # arbitrarily taking first knapsack with best score. 
+    knapsack = bd[1][0] # arbitrarily taking first knapsack with best score. 
+    knap_score = b[0]
+    event_spaces, agent_event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, bd[1][0]) 
     
     projected_best_file_names = []
     projected_best_rms = []
@@ -36,9 +37,9 @@ def get_best_decomposition(configs, file_location, file_name):
         projected_best_file_names.append(rm_file_name)
         projected_best_rms.append(projected_rm)
 
-    return projected_best_file_names, projected_best_rms
+    return projected_best_file_names, projected_best_rms, agent_event_spaces_dict, knap_score
 
-def get_trivial_decomposition(configs, file_location, file_name): # HACK fix this stuff
+def get_trivial_decomposition(configs, file_location, file_name): 
     '''
     Gets trivial decomposition by giving each agent the complete event set.
 
@@ -56,7 +57,7 @@ def get_trivial_decomposition(configs, file_location, file_name): # HACK fix thi
     proj_rm_list = []
 
     minimal_knapsack = configs.forbidden_set
-
+    knap_score = configs.get_score(minimal_knapsack)
     event_space , agent_event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, minimal_knapsack)
 
     for a, es in agent_event_spaces_dict.items():
@@ -70,14 +71,12 @@ def get_trivial_decomposition(configs, file_location, file_name): # HACK fix thi
         proj_rm_list.append(projected_rm_a) # build to put in parallel
         rm_file_list.append(rm_file_name)
 
-
     # Now I have what I want to return
-
     # You should sitll probably do a decomposition check right now... 
 
     rm_p = bis.put_many_in_parallel(proj_rm_list)
     if bis.is_decomposable(configs.rm, rm_p, agent_event_spaces_dict, configs.num_agents, enforced_set = configs.enforced_set): 
-        return rm_file_list, proj_rm_list
+        return rm_file_list, proj_rm_list, agent_event_spaces_dict, knap_score
     else:
         raise Exception(f" With forbidden assignments {configs.forbidden_set} this reward machine is not decomposible (don't trust the trivial {file_name} output files)")
         
@@ -90,20 +89,21 @@ def get_random_decomposition(configs, file_location, file_name): # I am by far t
     knapsack_powerset = list(chain.from_iterable(combinations(knapsack_list, r) for r in range(len(knapsack_list)+1))) #list of tuples where tuples are subsets of knapsack
     
     decomposition_success = False
-    while not decomposition_success: 
+
+    while not decomposition_success:  # I could be helping this find something fastser by removing everything that doesn't work. 
         rm_file_list = []
         proj_rm_list = []
 
         random_knapsack_tuple = random.choice(knapsack_powerset)  #should be tuple of tuples
         random_knapsack = set(random_knapsack_tuple)
-
+        
         # need to get all possible knapsacks now  
 
         if configs.forbidden_set.issubset(random_knapsack):
+            knap_score = configs.get_score(random_knapsack)
             event_space , agent_event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, random_knapsack)
-
             for a, es in agent_event_spaces_dict.items():
-                print("event set", es)
+                #print("event set", es)
                 projected_rm_a = bis.project_rm(set(es), configs.rm)
                 proj_rm_list.append(projected_rm_a) # build to put in parallel
                 
@@ -126,4 +126,4 @@ def get_random_decomposition(configs, file_location, file_name): # I am by far t
         rm_file_name = rm_file_list[i]
         rm.write_rm_file(file_location, rm_file_name)
 
-    return rm_file_list, proj_rm_list
+    return rm_file_list, proj_rm_list, agent_event_spaces_dict

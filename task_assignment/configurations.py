@@ -133,4 +133,19 @@ class Configurations():
 
         return knapsack_utility_score / self.total_utility_score
 
+    def get_score(self, knapsack):
+        '''
+        combine the other three scores, weighted with weights. 
+        '''
+        event_spaces, event_spaces_dict = hf.get_event_spaces_from_knapsack(self.all_events, knapsack)
 
+        se  = self.get_shared_event_score(self.knapsack)
+        f = self.get_fairness_score(self.knapsack, event_spaces_dict)
+        u = self.get_utility_score(self.knapsack)
+        
+        se_weight, f_weight, u_weight = self.weights
+        score = se * se_weight + f * f_weight + u * u_weight
+
+        #print(f"se score is:, {se} , f score is: {f}, u score is: {u}, for a total of {score}")
+        
+        return score 

@@ -80,24 +80,6 @@ class Node:
 
         return is_decomp
 
-    def get_score(self, configs):
-        '''
-        Get the score of a knapsack according to Fairness and Utility and shared events
-        The issue is the current weights are not equal. Need to get a way to have normalized values 
-        - shared event score in particluar needs to be normalized some how 
-        '''
-
-        event_spaces, event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, self.knapsack)
-
-        se  = configs.get_shared_event_score(self.knapsack)
-        f = configs.get_fairness_score(self.knapsack, event_spaces_dict)
-        u = configs.get_utility_score(self.knapsack)
-        se_weight, f_weight, u_weight = configs.weights
-        score = se * se_weight + f * f_weight + u * u_weight
-        #print(f"se score is:, {se} , f score is: {f}, u score is: {u}, for a total of {score}")
-        
-        return score 
-
     def small_traverse(self, configs, best_sack = (0, [])):
         '''
         Recursive function
@@ -136,7 +118,6 @@ class Node:
             print(s)
             #######################
 
-
         # if decomposible and remaining events to add, add children with values 1 & 0
         if is_decomp:
             if self.future_events: 
@@ -159,7 +140,7 @@ class Node:
                     #######################
 
                 # Update sucsessful find 
-                knap_score = self.get_score(configs)
+                knap_score = configs.get_score(self.knapsack)
 
                 if knap_score >= best_sack[0]:
 
