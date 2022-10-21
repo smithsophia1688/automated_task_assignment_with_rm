@@ -1,4 +1,7 @@
+from email.mime import base
+from hashlib import new
 import random, math, os
+from re import T
 import numpy as np
 from enum import Enum
 
@@ -6,6 +9,7 @@ import sys
 sys.path.append('../')
 sys.path.append('../../')
 from reward_machines.sparse_reward_machine import SparseRewardMachine
+
 
 """
 Enum with the actions that the agent can execute
@@ -17,7 +21,7 @@ class Actions(Enum):
     left  = 3 # move left
     none  = 4 # none 
 
-class MultiAgentCraftingEnv:
+class MultiAgentCraftingEnv: #There is some henious code here but it like, works (would also be easy to clean up. )
 
     def __init__(self, rm_file, num_agents, env_settings):
         """
@@ -42,9 +46,10 @@ class MultiAgentCraftingEnv:
         self.u = self.reward_machine.get_initial_state()
         self.last_action = np.full(self.num_agents, -1, dtype=int) #Initialize last action with garbage values
 
-        self.yellow_button_pushed = False
-        self.green_button_pushed = False
-        self.red_button_pushed = False
+        self.flags = {'tree': True, 'a1': False, 'a2': False, 'a3': False, 'log': False, 'carrying': False, 'arrived': False, 'crafted': False }
+        self.carrying_agent = None #Update with agent id when someone picks up the log. 
+
+        self.agent_events_dict = {0: {'ai': 'a1', 'li': 'l1', 'tri': 'tr1'}, 1: {'ai': 'a2', 'li': 'l2', 'tri': 'tr2'}, 2: {'ai': 'a3', 'li': 'l3', 'tri': 'tr3'}}
 
     def _load_map(self):
         """
@@ -62,23 +67,18 @@ class MultiAgentCraftingEnv:
 
         # Populate the map with markers
         self.objects = {}
-        self.objects[self.env_settings['goal_location']] = "g" # goal location
-        self.objects[self.env_settings['yellow_button']] = 'yb'
-        self.objects[self.env_settings['green_button']] = 'gb'
-        self.objects[self.env_settings['red_button']] = 'rb'
-        self.yellow_tiles = self.env_settings['yellow_tiles']
-        self.green_tiles = self.env_settings['green_tiles']
-        self.red_tiles = self.env_settings['red_tiles']
+        self.objects[self.env_settings['craft_table']] = 'c' # goal location
+        self.objects[self.env_settings['tree_loc']] = 't'
 
         self.p = self.env_settings['p']
+
+        self.num_states = self.Nr * self.Nc
 
         # Set the available actions of all agents. For now all agents have same action set.
         actions = np.array([Actions.up.value, Actions.right.value, Actions.left.value, Actions.down.value, Actions.none.value], dtype=int)
         self.actions = np.full((self.num_agents, len(actions)), -2, dtype=int)
         for i in range(self.num_agents):
             self.actions[i] = actions
-
-        self.num_states = self.Nr * self.Nc
         
         # Define forbidden transitions corresponding to map edges
         self.forbidden_transitions = set()
@@ -124,35 +124,19 @@ class MultiAgentCraftingEnv:
         """
         s_next = np.full(self.num_agents, -1, dtype=int)
 
-        agent1 = 0
-        agent2 = 1
-        agent3 = 2
-
         for i in range(self.num_agents):
             s_next[i], last_action = self.get_next_state(s[i], a[i], i)
             self.last_action[i] = last_action
 
-        (row1, col1) = self.get_state_description(s_next[agent1])
-        (row2, col2) = self.get_state_description(s_next[agent2])
-        (row3, col3) = self.get_state_description(s_next[agent3])
-
-        if (row1, col1) == self.env_settings['yellow_button']:
-            self.yellow_button_pushed = True
-        if (row2, col2) == self.env_settings['green_button']:
-            self.green_button_pushed = True
-
-        (row2_last, col2_last) = self.get_state_description(s[agent2])
-        (row3_last, col3_last) = self.get_state_description(s[agent3])
-        if ((row2, col2) == self.env_settings['red_button']) and ((row3, col3) == self.env_settings['red_button']) and ((row2_last, col2_last) == self.env_settings['red_button']) and ((row3_last, col3_last) == self.env_settings['red_button']):
-            self.red_button_pushed = True
-
         l = self.get_mdp_label(s, s_next, self.u)
         r = 0
 
-        for e in l:
+        for e in l: # SUM OVER ALL REWARDS. GOOD. 
             # Get the new reward machine state and the reward of this step
             u2 = self.reward_machine.get_next_state(self.u, e)
             r = r + self.reward_machine.get_reward(self.u, u2)
+            if r <= 0:
+                self.flags['failed'] = True
             # Update the reward machine state
             self.u = u2
 
@@ -223,20 +207,6 @@ class MultiAgentCraftingEnv:
                 col += 1
 
         s_next = self.get_state_from_description(row, col)
-
-        # If the appropriate button hasn't yet been pressed, don't allow the agent into the colored region
-        if agent_id == 0:
-            if (self.u == 0) or (self.u == 1) or (self.u == 2) or (self.u == 3) or (self.u == 4) or (self.u == 5):
-                if (row, col) in self.red_tiles:
-                    s_next = s
-        if agent_id == 1:
-            if (self.u == 0):
-                if (row, col) in self.yellow_tiles:
-                    s_next = s
-        if agent_id == 2:
-            if (self.u == 0) or (self.u == 1):
-                if (row, col) in self.green_tiles:
-                    s_next = s
 
         last_action = a_
         return s_next, last_action
@@ -335,8 +305,21 @@ class MultiAgentCraftingEnv:
         """
         return np.copy(self.s_i)
 
+    def was_at_tree(self, agent):
+        if agent == 0:
+            ai = 'a1'
+        if agent == 1:
+            ai = 'a2'
+        if agent == 2:
+            ai = 'a3'
+        
+        if self.flags[ai] == True:
+            return True
+
+        return False
+
     ############## DQPRM-RELATED METHODS ########################################
-    def get_mdp_label(self, s, s_next, u):
+    def get_mdp_label_old(self, s, s_next, u):
         """
         Get the mdp label resulting from transitioning from state s to state s_next.
 
@@ -366,7 +349,22 @@ class MultiAgentCraftingEnv:
         row1, col1 = self.get_state_description(s_next[agent1])
         row2, col2 = self.get_state_description(s_next[agent2])
         row3, col3 = self.get_state_description(s_next[agent3])
+       
+        #self.flags = {'tree': True, 'a1': False, 'a2': False, 'log': False, 'carrying': False, 'arrived': False, 'crafted': False }
 
+        if self.flags['tree'] == True:
+            num_agents_at_tree = 0
+            if (row1, col1) == self.env_settings['tree_loc']:
+                num_agents_at_tree += 1
+            if (row2, col2) == self.env_settings['tree_loc']:
+                num_agents_at_tree += 1
+            if (row3, col3) == self.env_settings['tree_loc']:
+                num_agents_at_tree += 1
+            if num_agents_at_tree >= 2:
+                #print("Two agents have arrived at the tree to cut it down")
+                l.append('cutting')
+                l.append('timber')
+                
         if u == 0:
         # Now check if agents are on buttons
             if not ((row2, col2) in self.yellow_tiles) and (row1,col1) == self.env_settings['yellow_button']:
@@ -403,6 +401,153 @@ class MultiAgentCraftingEnv:
 
         return l
 
+    def check_tree_loc(self, l, agent, row, col):
+        if agent == 0:
+            ai = 'a1'
+            li = 'l1'
+        if agent == 1:
+            ai = 'a2'
+            li = 'l2'
+        if agent == 2:
+            ai = 'a3'
+            li = 'l3'
+
+        if (row, col) == self.env_settings['tree_loc']:
+            if not self.was_at_tree(agent):
+                l.append(ai)
+            self.flags[ai] = True
+
+        else: #not currently at tree
+            if self.was_at_tree(agent):
+                l.append(li)
+            self.flags[ai] = False
+
+    def ready_to_timber(self):
+        num_at_tree = 0
+        ai_list = ['a1', 'a2', 'a3']
+        for ai in ai_list:
+            if self.flags[ai] == True:
+                num_at_tree += 1
+
+        if num_at_tree >= 2:
+            return True
+
+        return False
+
+    def whos_at_tree(self):
+        tree_dwellers = set()
+        ai_list = ['a1', 'a2', 'a3']
+        for ai in ai_list:
+            if self.flags[ai] == True:
+                tree_dwellers.add(ai)
+        return tree_dwellers
+
+    def get_mdp_label_tree(self,  s_next):
+        l = []
+        agent1 = 0
+        agent2 = 1
+        agent3 = 2
+
+        row1, col1 = self.get_state_description(s_next[agent1])
+        row2, col2 = self.get_state_description(s_next[agent2])
+        row3, col3 = self.get_state_description(s_next[agent3])
+
+        # in here because tree exists
+        # update arrivals and departures to tree land
+        # cool cool
+
+        previous_tree_dwellers = self.whos_at_tree()
+
+        self.check_tree_loc(l, agent1, row1, col1)
+        self.check_tree_loc(l, agent2, row2, col2)
+        self.check_tree_loc(l, agent3, row3, col3)
+
+        new_tree_dwellers = self.whos_at_tree()
+
+        if len(set(previous_tree_dwellers) & set(new_tree_dwellers)) == 2:
+            self.flags['tree'] = False
+            self.flags['log'] = True
+            l = ['timber']
+        return l
+
+    def check_agent_pickup(self, l, agent, row, col):
+        if agent == 0:
+            tri = 'tr1'
+        if agent == 1:
+            tri = 'tr2'
+        if agent == 2:
+            tri = 'tr3'
+
+        if (row, col) == self.env_settings['log_loc']:
+            self.carrying_agent = agent
+            self.flags['carrying'] = True
+            l.append(tri)
+
+    def check_if_move_log(self, l, agent, row, col):
+        if agent == 0:
+            tri = 'tr1'
+        if agent == 1:
+            tri = 'tr2'
+        if agent == 2:
+            tri = 'tr3'
+
+        if agent == self.carrying_agent:
+            self.env_settings['log_loc'] = (row, col)
+            if (row, col) == self.env_settings['craft_table']:
+                l.append('ar')
+                self.flags['arrived'] = True
+                self.flags['log'] = False
+                self.flags['carrying'] = False
+            else:
+                l.append(tri)
+        
+    def get_mdp_label_log(self, s_next):
+        l = []
+        agent1 = 0
+        agent2 = 1
+        agent3 = 2
+
+        row1, col1 = self.get_state_description(s_next[agent1])
+        row2, col2 = self.get_state_description(s_next[agent2])
+        row3, col3 = self.get_state_description(s_next[agent3])
+
+        if self.flags['carrying'] == False:
+            self.check_agent_pickup(l, agent1, row1, col1)
+            if self.flags['carrying'] == False:
+                self.check_agent_pickup(l, agent2, row2, col2)
+                if self.flags['carrying'] == False:
+                    self.check_agent_pickup(l, agent3, row3, col3)
+            
+        else: #Someone is already carrying it. 
+            self.check_if_move_log(l, agent1, row1, col1)
+            self.check_if_move_log(l, agent2, row2, col2)
+            self.check_if_move_log(l, agent3, row3, col3)
+
+        return l
+
+    def get_mdp_label_craft(self, s_next):
+        l = []
+        agent3 = 2
+        row3, col3 = self.get_state_description(s_next[agent3])
+
+        if (row3, col3) == self.env_settings['craft_table']:
+            l.append('craft')
+            self.flags['crafted']  = True
+        return l
+
+    def get_mdp_label(self, s, s_next, u):
+        if self.flags['tree'] == True:
+            l = self.get_mdp_label_tree(s_next)
+        elif self.flags['log'] == True:
+            l = self.get_mdp_label_log(s_next)
+        elif self.flags['arrived'] == True:
+            l = self.get_mdp_label_craft(s_next)
+
+        return l
+
+    def is_complete(self):
+        return self.flags['crafted']
+  
     ################## HRL-RELATED METHODS ######################################
     def get_options_list(self, agent_id):
         """
@@ -576,24 +721,21 @@ class MultiAgentCraftingEnv:
             Index of the current state
         """
         display = np.zeros((self.Nr, self.Nc))
-
+        
         # Display the locations of the walls
         for loc in self.env_settings['walls']:
             display[loc] = -1
 
-        display[self.env_settings['red_button']] = 9
-        display[self.env_settings['green_button']] = 9
-        display[self.env_settings['yellow_button']] = 9
-        display[self.env_settings['goal_location']] = 9
+        display[self.env_settings['craft_table']] = 9
+        #pre cut tree: 
+        if self.flags['tree']:
+            display[self.env_settings['tree_loc']] = 8
 
-        for loc in self.red_tiles:
-            display[loc] = 8
-        for loc in self.green_tiles:
-            display[loc] = 8
-        for loc in self.yellow_tiles:
-            display[loc] = 8
+        # Need a way to track where the log is... and display..
+        if self.flags['log']: 
+            display[self.env_settings['log_loc']] = 7
 
-        # Display the agents
+        # Display the location of the agent in the world
         for i in range(self.num_agents):
             row, col = self.get_state_description(s[i])
             display[row, col] = i + 1
@@ -603,23 +745,18 @@ class MultiAgentCraftingEnv:
 def play():
     n = 3 # num agents
     base_file_dir = os.path.abspath(os.path.join(os.getcwd(), '../../..'))
-    rm_string = os.path.join(base_file_dir, 'experiments', 'buttonsCopy', 'team_buttons_rm.txt')
-    
-    # Set the environment settings for the experiment
+    print("base file dir", base_file_dir)
+    rm_string = os.path.join(base_file_dir, 'automated_task_assignment_with_rm', 'data', 'saved_reward_machines', 'crafting_task', 'crafting_rm_full_no_cut.txt')
+    #/Users/sophia/Documents/Research/automated_task_assignment_with_rm/data/saved_reward_machines/crafting_task/crafting_rm_full_updated.txt
+    # Set the environmnt settings for the experiment
     env_settings = dict()
     env_settings['Nr'] = 10
     env_settings['Nc'] = 10
-    env_settings['initial_states'] = [0, 5, 8]
-    env_settings['walls'] = [(0, 3), (1, 3), (2, 3), (3,3), (4,3), (5,3), (6,3), (7,3),
-                                (7,4), (7,5), (7,6), (7,7), (7,8), (7,9),
-                                (0,7), (1,7), (2,7), (3,7), (4,7) ]
-    env_settings['goal_location'] = (8,9)
-    env_settings['yellow_button'] = (0,2)
-    env_settings['green_button'] = (5,6)
-    env_settings['red_button'] = (6,9)
-    env_settings['yellow_tiles'] = [(2,4), (2,5), (2,6), (3,4), (3,5), (3,6)]
-    env_settings['green_tiles'] = [(2,8), (2,9), (3,8), (3,9)]
-    env_settings['red_tiles'] = [(8,5), (8,6), (8,7), (8,8), (9,5), (9,6), (9,7), (9,8)]
+    env_settings['initial_states'] = [20, 81, 99]
+    env_settings['walls'] = [(0, 7), (1, 7), (2, 7), (3,7), (4,7), (5,7), (8,7), (9,7)]
+    env_settings['craft_table'] = (1,9)
+    env_settings['tree_loc'] = (0, 3)
+    env_settings['log_loc'] = (0, 4)
 
     env_settings['p'] = 1.0
     
@@ -653,14 +790,15 @@ def play():
         r, l, s = game.environment_step(s, a)
         
         print("---------------------")
+        print("flags :", game.flags)
         print("Next States: ", s)
         print("Label: ", l)
         print("Reward: ", r)
         print("RM state: ", game.u)
-        print('Meta state: ', game.get_meta_state(0))
+        #print('Meta state: ', game.get_meta_state(0))
         print("---------------------")
 
-        if game.reward_machine.is_terminal_state(game.u): # Game Over
+        if game.reward_machine.is_terminal_state(game.u): # Game Over 
                 break 
     game.show(s)
     

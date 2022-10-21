@@ -1,0 +1,41 @@
+0 # initial state 
+(0, 1, 'cutting', 0)      # An agent cuts down the tree
+(1, 1, 'cutting', 0)      # An agent is still cutting the tree
+(1, 0, 'stop_cutting', 0) # agent stops cutting the tree early
+(1, 2, 'cutting_done', 0) # cutting complete
+(2, 3, 't', 0)            # timber! tree falls.
+(3, 4, 'a1pl', 0)         # agent 1 picks up the log first
+(3, 5, 'a2pl', 0)         # agent 2 picks up the log first
+(4, 6, 'a2pl', 0)         # agent 2 picks up the log after agent 1
+(5, 6, 'a1pl', 0)         # agent 1 picks up the log after agent 2
+(4, 3, 'a1dl', 0)         # whoops, agent 1 drops log!
+(5, 3, 'a2dl', 0)         # whoops, agent 2 drops log!
+(6, 4, 'a2dl', 0)         # whoops, agent 2 drops log!
+(6, 5, 'a1dl', 0)         # whoops, agent 1 drops log!
+(6, 7, 'moving_log', 0)   # agents are carrying the heavy log
+(7, 7, 'still_moving', 0) # agents are still moving the log
+(7, 6, 'not_moving', 0)   # agents stop moving the log (means one of them dropped the log)
+(7, 8, 'arrive', 0)       # log arrives at crafting table 
+(8, 9, 'craft', 0)        # experienced crafter builds at crafting table
+(9, 10, 'chair', 1)       # a rocking chair appears! 
+
+
+# Smaller  but old
+(0, 1, 'cutting', 0)      # An agent cuts down the tree
+(1, 1, 'cutting', 0)      # An agent is still cutting the tree
+(1, 0, 'stop_cutting', 0) # agent stops cutting the tree early
+(1, 2, 't', 0)            # timber! tree falls. (no state 2...)
+(2, 3, 'a1pl', 0)         # agent 1 picks up the log first
+(2, 4, 'a2pl', 0)         # agent 2 picks up the log first
+(3, 5, 'a2pl', 0)         # agent 2 picks up the log after agent 1
+(4, 5, 'a1pl', 0)         # agent 1 picks up the log after agent 2
+(3, 2, 'a1dl', 0)         # whoops, agent 1 drops log!
+(4, 2, 'a2dl', 0)         # whoops, agent 2 drops log!
+(5, 3, 'a2dl', 0)         # whoops, agent 2 drops log!
+(5, 4, 'a1dl', 0)         # whoops, agent 1 drops log!
+(5, 6, 'moving_log', 0)   # agent is carrying the log
+(6, 6, 'moving_log', 0)   # agent is still moving the log
+(6, 5, 'not_moving', 0)   # agent stops moving the log 
+(6, 7, 'arrive', 0)       # log arrives at crafting table 
+(7, 8, 'craft', 0)        # experienced crafter builds at crafting table
+(8, 9, 'chair', 1)        # a rocking chair appears! 

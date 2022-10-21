@@ -1,0 +1,7 @@
+0  # Initial state 
+(0, 3, 't', 0) 
+(3, 2, 'a2pl', 0) 
+(2, 3, 'a2dl', 0) 
+(2, 1, 'moving_log', 1) 
+(1, 1, 'moving_log', 0) 
+(1, 2, 'not_moving', 0) 

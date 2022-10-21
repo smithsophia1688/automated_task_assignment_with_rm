@@ -1,0 +1,20 @@
+### EXPERIMENT 1 = BEST, CRAFTING, weights = [5, 1, 1] ###
+
+enforced_agent_event_dict  = {0:[], 1:[], 2:[]}        # {agent : [required  events]}
+forbidden_agent_event_dict = {0:['craft'], 1:['craft'], 2:[]}  # {agent : [forbidden events]}
+incompatible_pairs = [('a1pl', 'a2pl'), ('a1dl', 'a2dl')]
+
+Kept Event Sets: 
+0:{2: ['not_moving', 'a1dl', 'moving_log', 'arrive', 'chair', 'craft', 'a1pl'], 1: ['not_moving', 't', 'a2dl', 'moving_log', 'a2pl'], 0: ['stop_cutting', 'a1pl', 't', 'cutting']} with labor division 7 vs. 5 vs. 4 
+1:{2: ['not_moving', 'a2dl', 'moving_log', 'chair', 'arrive', 'a2pl', 'craft'], 0: ['a2pl', 'stop_cutting', 't', 'cutting'], 1: ['not_moving', 'a1pl', 't', 'a1dl', 'moving_log']} with labor division 7 vs. 4 vs. 5 
+2:{0: ['moving_log', 'a1pl', 't', 'a1dl', 'not_moving'], 2: ['not_moving', 'a2dl', 'moving_log', 'arrive', 'chair', 'a2pl', 'craft'], 1: ['t', 'cutting', 'a2pl', 'stop_cutting']} with labor division 5 vs. 7 vs. 4 
+3:{0: ['moving_log', 'a2pl', 'a2dl', 't', 'not_moving'], 2: ['not_moving', 'a1dl', 'moving_log', 'arrive', 'chair', 'craft', 'a1pl'], 1: ['a1pl', 't', 'cutting', 'stop_cutting']} with labor division 5 vs. 7 vs. 4 
+
+There are 34 possible knapsack items. 
+There are 17179869184 possible ways to fill a knapsack with these items. 
+The best viable knapsack(s) have size 3.5694444444444446 and there are 4 successful ways to do it.
+
+here {2: ['not_moving', 'a1dl', 'moving_log', 'arrive', 'chair', 'craft', 'a1pl'], 1: ['not_moving', 't', 'a2dl', 'moving_log', 'a2pl'], 0: ['stop_cutting', 'a1pl', 't', 'cutting']}
+
+
+

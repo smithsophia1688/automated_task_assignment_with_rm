@@ -1,0 +1,124 @@
+Kept Event Sets: 
+0:{1: ['a2', 'l2', 'timber', 'cutting'], 2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'tr1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+1:{1: ['a2', 'l2', 'timber', 'cutting'], 2: ['craft', 'cutting', 'ar', 'a3'], 0: ['tr1', 'l1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+2:{1: ['a2', 'st_cutting', 'timber', 'cutting'], 2: ['craft', 'cutting', 'ar', 'a3'], 0: ['tr1', 'ar', 'timber', 'st_cutting']} with labor division 4 vs. 4 vs. 4 
+3:{1: ['a2', 'st_cutting', 'timber', 'cutting'], 2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'tr1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+4:{1: ['a2', 'st_cutting', 'timber', 'cutting'], 2: ['craft', 'cutting', 'ar', 'a3'], 0: ['tr1', 'l1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+5:{1: ['a2', 'ar', 'timber', 'cutting'], 2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'tr1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+6:{2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'a1', 'timber', 'st_cutting'], 1: ['ar', 'timber', 'tr2', 'cutting']} with labor division 4 vs. 4 vs. 4 
+7:{2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'a1', 'ar', 'timber'], 1: ['ar', 'timber', 'tr2', 'cutting']} with labor division 4 vs. 4 vs. 4 
+8:{2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'a1', 'l1', 'ar'], 1: ['ar', 'timber', 'tr2', 'cutting']} with labor division 4 vs. 4 vs. 4 
+9:{1: ['a2', 'ar', 'timber', 'cutting'], 2: ['craft', 'cutting', 'ar', 'a3'], 0: ['tr1', 'l1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+10:{2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'a1', 'l1', 'timber'], 1: ['ar', 'timber', 'tr2', 'cutting']} with labor division 4 vs. 4 vs. 4 
+11:{1: ['a2', 'ar', 'l2', 'cutting'], 2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'tr1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+12:{2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'a1', 'timber', 'st_cutting'], 1: ['ar', 'l2', 'timber', 'tr2']} with labor division 4 vs. 4 vs. 4 
+13:{2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'a1', 'ar', 'timber'], 1: ['ar', 'l2', 'timber', 'tr2']} with labor division 4 vs. 4 vs. 4 
+14:{2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'a1', 'l1', 'timber'], 1: ['ar', 'l2', 'timber', 'tr2']} with labor division 4 vs. 4 vs. 4 
+15:{2: ['craft', 'cutting', 'ar', 'a3'], 0: ['cutting', 'a1', 'timber', 'st_cutting'], 1: ['ar', 'st_cutting', 'timber', 'tr2']} with labor division 4 vs. 4 vs. 4 
+16:{1: ['a2', 'l2', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+17:{1: ['a2', 'l2', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'l1', 'ar']} with labor division 4 vs. 4 vs. 4 
+18:{1: ['a2', 'l2', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'l1', 'timber']} with labor division 4 vs. 4 vs. 4 
+19:{1: ['a2', 'st_cutting', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'ar', 'st_cutting']} with labor division 4 vs. 4 vs. 4 
+20:{1: ['a2', 'st_cutting', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'timber', 'st_cutting']} with labor division 4 vs. 4 vs. 4 
+21:{1: ['a2', 'st_cutting', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+22:{1: ['a2', 'st_cutting', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'l1', 'st_cutting']} with labor division 4 vs. 4 vs. 4 
+23:{1: ['a2', 'st_cutting', 'l2', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'timber', 'st_cutting']} with labor division 4 vs. 4 vs. 4 
+24:{1: ['a2', 'ar', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'timber', 'st_cutting']} with labor division 4 vs. 4 vs. 4 
+25:{1: ['a2', 'ar', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+26:{1: ['a2', 'ar', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'l1', 'ar']} with labor division 4 vs. 4 vs. 4 
+27:{1: ['a2', 'ar', 'timber', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'l1', 'timber']} with labor division 4 vs. 4 vs. 4 
+28:{1: ['a2', 'ar', 'l2', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'ar', 'timber']} with labor division 4 vs. 4 vs. 4 
+29:{1: ['a2', 'ar', 'l2', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'l1', 'timber']} with labor division 4 vs. 4 vs. 4 
+30:{1: ['a2', 'ar', 'st_cutting', 'cutting'], 2: ['craft', 'tr3', 'ar', 'timber'], 0: ['cutting', 'a1', 'timber', 'st_cutting']} with labor division 4 vs. 4 vs. 4 
+
+There are 22 possible knapsack items. 
+There are 4194304 possible ways to fill a knapsack with these items. 
+The best viable knapsack(s) have size 1.7142857142857144 and there are 31 successful ways to do it.
+
+
+
+Experiment: 
+num_agents = 3
+#rm =  sparse.SparseRewardMachine(file = 'data/saved_reward_machines/testing_decomp_1.txt') 
+rm = sparse.SparseRewardMachine(file = 'data/saved_reward_machines/crafting_task/crafting_rm_full_updated.txt' )
+print(rm.events)
+print(" Step 1: check that you have a valid original rm")
+print("    ... ", bs.can_win_check(rm))
+
+{'tr3', 'a3', 'l1', 'l2', 'cutting', 'l3', 'a1', 'timber', 'ar', 'a2', 'tr1', 'craft', 'tr2', 'st_cutting'}
+
+forbidden_agent_event_dict = {0:['a2', 'l2', 'a3', 'l3', 'craft', 'tr2', 'tr3'], 1:['a1', 'l1', 'a3', 'l3', 'craft', 'tr1', 'tr3'], 2:['a1', 'l1', 'a2', 'l2', 'tr1', 'tr2']} 
+
+es1= [ 'l1', 'cutting', 'a1', 'timber', 'ar', 'tr1',  'st_cutting']
+es2 = ['l2', 'cutting', 'timber', 'ar', 'a2',  'tr2', 'st_cutting']
+es3 = ['tr3', 'a3',  'cutting', 'l3', 'timber', 'ar', 'st_cutting']
+
+es_list = [set(es1), set(es2), set(es3)]
+strategy_set = set()
+for es in es_list:
+    strategy_set = strategy_set.union(es)
+
+strategic_rm = bs.remove_rm_transitions(rm, strategy_set)
+bs.remove_unreachable_states(strategic_rm)
+print(strategic_rm)
+print(strategic_rm.delta_r)
+print("Can I win", bs.can_win_check(strategic_rm))
+
+p1 = bs.project_rm(set(es1), strategic_rm)
+p2 = bs.project_rm(set(es2), strategic_rm)
+p3 = bs.project_rm(set(es3), strategic_rm )
+rms = [p1, p2, p3]
+
+rm_p = bs.put_many_in_parallel(rms)
+
+
+decomposable = bs.is_bisimilar( strategic_rm, rm_p)
+
+print("decomposable is", decomposable)
+
+
+
+weights = [1, 1, 0]
+#forbidden_agent_event_dict = {0:['a2', 'l2', 'a3', 'l3'], 1:['a1', 'l1', 'a3', 'l3'], 2:['a1', 'l1', 'a2', 'l2']} 
+enforced_agent_event_dict = {0: [], 1:[], 2: []}
+incompatible_pairs = []
+
+
+# rm
+
+0 # initial state 
+(0, 1, 'a1', 0) # 1 = a1 only 
+(0, 2, 'a2', 0) # 2 = a2 only 
+(0, 3, 'a3', 0) # 3 = a3 only
+(1, 4, 'a2', 0) # 4 = a2 and a1
+(2, 4, 'a1', 0)
+(1, 5, 'a3', 0) # 5 = a3 and a1
+(3, 5, 'a1', 0)
+(2, 6, 'a3', 0) # 6 = a3 and a2
+(3, 6, 'a2', 0)
+(1, 0, 'l1', 0) 
+(2, 0, 'l2', 0)  
+(3, 0, 'l3', 0) 
+(4, 1, 'l2', 0) 
+(4, 2, 'l1', 0)
+(5, 1, 'l3', 0) 
+(5, 3, 'l1', 0)
+(6, 2, 'l3', 0) 
+(6, 3, 'l2', 0)
+(4, 71, 'cutting', 0) # only 1 event, 
+(5, 72, 'cutting', 0)
+(6, 73, 'cutting', 0)
+(71, 4, 'st_cutting', 0) # only 1: this is if you want to make them stay at the place for a certain amount of time. 
+(72, 5, 'st_cutting', 0)
+(73, 6, 'st_cutting', 0)
+(71, 8, 'timber', 0) # log appears 
+(72, 8, 'timber', 0) # log appears 
+(73, 8, 'timber', 0) # log appears 
+(8, 9, 'tr1', 0 )
+(8, 9, 'tr2', 0)
+(8, 9, 'tr3', 0)
+(9, 9, 'tr1', 0)
+(9, 9, 'tr2', 0)
+(9, 9, 'tr3', 0)
+(9, 10, 'ar', 0) # log arrives # 
+(10, 11, 'craft', 1)

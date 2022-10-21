@@ -9,7 +9,7 @@ from reward_machines.sparse_reward_machine import SparseRewardMachine
 
 """
 Enum with the actions that the agent can execute
-"""
+""" 
 class Actions(Enum):
     up    = 0 # move up
     right = 1 # move right
@@ -141,6 +141,7 @@ class ButtonsEnv:
             if u == 2:
                 if (row, col) == self.env_settings['goal_location']:
                     l.append('g')
+
         elif self.agent_id == 2:
             if u == 0:
                 if np.random.random() <= thresh:
@@ -350,7 +351,7 @@ class ButtonsEnv:
 def play():
     agent_id = 2
     base_file_dir = os.path.abspath(os.path.join(os.getcwd(), '../../..'))
-    rm_string = os.path.join(base_file_dir, 'experiments', 'buttons', 'buttons_rm_agent_{}.txt'.format(agent_id))
+    rm_string = os.path.join(base_file_dir, 'automated_task_assignment_with_rm', 'data', 'saved_reward_machines', 'buttons', 'buttons_rm_agent_{}.txt'.format(agent_id))
     
     # Set the environment settings for the experiment
     env_settings = dict()
@@ -389,7 +390,7 @@ def play():
         print()
         # Executing action
         if a in str_to_action:
-            r, l, s, failed_task_flag = game.environment_step(s, str_to_action[a])
+            r, l, s = game.environment_step(s, str_to_action[a])
         
             print("---------------------")
             print("Next States: ", s)
@@ -398,7 +399,7 @@ def play():
             print("RM state: ", game.u)
             print("failed task: ", failed_task_flag)
             print("---------------------")
-
+            
             if game.reward_machine.is_terminal_state(game.u): # Game Over
                     break 
             

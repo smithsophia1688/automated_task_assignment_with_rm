@@ -47,11 +47,11 @@ def get_sack_from_dict(dict):
 def print_results(configs, bd):
     # bd has form = (score, [knapsacks with that score])
     s = "Kept Event Sets: \n"
-    full_events = set(configs.future_events)
+    all_events = set(configs.all_events)
     
 
     for i , k  in enumerate(bd[1]):
-        event_spaces, event_spaces_dict = get_event_spaces_from_knapsack(full_events, k) # event_spaces_dict = {agent: [events] }
+        event_spaces, event_spaces_dict = get_event_spaces_from_knapsack(all_events, k) # event_spaces_dict = {agent: [events] }
         labor_division = [len(x) for z, x in event_spaces_dict.items()]
         labor_division_string = ""
         for j, p in enumerate(labor_division):
@@ -59,8 +59,8 @@ def print_results(configs, bd):
             if j != len(labor_division) - 1: 
                 labor_division_string += " vs. "
 
-        kept_ev = full_events - k
-        s_mid = str(i) + ":" + str(kept_ev) + " with labor division " + labor_division_string + " \n"
+        kept_ev = all_events - k
+        s_mid = str(i) + ":" + str(event_spaces_dict) + " with labor division " + labor_division_string + " \n"
 
         s += s_mid
 

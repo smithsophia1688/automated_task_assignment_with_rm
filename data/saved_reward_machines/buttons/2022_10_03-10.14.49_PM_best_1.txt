@@ -1,0 +1,2 @@
+0  # Initial state 
+(0, 1, 'bg', 1) 

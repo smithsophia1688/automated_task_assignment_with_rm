@@ -1,4 +1,4 @@
-
+import os
 class SparseRewardMachine:
     def __init__(self,file=None):
         # <U,u0,delta_u,delta_r>
@@ -76,12 +76,27 @@ class SparseRewardMachine:
                 is_event_available = True
         return is_event_available
 
+    def get_origins(self, u_set):
+        all_origins = set()
+
+        for state, transitions in self.delta_u.items():
+            for u in u_set:
+                if u in transitions.values():
+                    all_origins.add(state)
+
+        return all_origins 
+
+
     # NEW METHOD
     def write_rm_file(self, file_location, file_name):
         '''
         file_name : string with destination of file 
         '''
-        file = file_location + file_name 
+        file = file_location + file_name
+
+        #print("FILE IS ", file)
+        
+        #print('Get current working directory : ', os.getcwd())
         with open(file, 'w+') as f:
             s = str(self.u0) + '  # Initial state \n'
             f.write(s)
@@ -92,7 +107,7 @@ class SparseRewardMachine:
 
                     rm_line = f"({trans_init_state}, {trans_end_state}, '{event}', {r}) \n"
                     f.write(rm_line)
-                    
+    
 
 
 
@@ -142,7 +157,7 @@ class SparseRewardMachine:
         # Check if reward is given for reaching the state in question
         for u0 in self.delta_r:
             if u1 in self.delta_r[u0]:
-                if self.delta_r[u0][u1] == 1:
+                if self.delta_r[u0][u1] != 0: # Small change: had been == 1. 
                     return True
         return False
             

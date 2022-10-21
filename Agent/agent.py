@@ -16,7 +16,7 @@ class Agent:
     state when starting a new episode by calling self.initialize_world() and 
     self.initialize_reward_machine().
     """
-    def __init__(self, rm_file, s_i, num_states, actions, agent_id):
+    def __init__(self, rm_file, s_i, num_states, actions, agent_id, my_shared_events = None, individual_events = None):
         """
         Initialize agent object.
 
@@ -37,6 +37,16 @@ class Agent:
         self.s = s_i
         self.actions = actions
         self.num_states = num_states
+        if my_shared_events == None:
+            self.my_shared_events = set()
+        else:
+            self.my_shared_events = my_shared_events
+
+        if  individual_events == None:
+            self.individual_events = set()
+        else:
+            self.individual_events = individual_events
+
 
         self.rm = SparseRewardMachine(self.rm_file)
         self.u = self.rm.get_initial_state()
@@ -134,7 +144,7 @@ class Agent:
         # Keep track of the RM location at the start of the 
         u_start = self.u
 
-        for event in label: # there really should only be one event in the label provided to an individual agent
+        for event in label: 
             # Update the agent's RM
             u2 = self.rm.get_next_state(self.u, event)
             self.u = u2
@@ -149,7 +159,7 @@ class Agent:
 
         if self.rm.is_terminal_state(self.u):
             # Completed task. Set flag.
-            self.is_task_complete = 1
+            self.is_task_complete = 1 # I DO NOT WANT TO USE THIS. 
 
     def update_q_function(self, s, s_new, u, u_new, a, reward, learning_params):
         """

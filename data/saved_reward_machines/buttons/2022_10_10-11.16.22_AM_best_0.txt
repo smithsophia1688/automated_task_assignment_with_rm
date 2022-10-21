@@ -1,0 +1,6 @@
+0  # Initial state 
+(0, 1, 'cutting', 0) 
+(1, 1, 'cutting', 0) 
+(1, 0, 'stop_cutting', 0) 
+(1, 2, 't', 1) 
+(2, 2, 'a1pl', 0) 

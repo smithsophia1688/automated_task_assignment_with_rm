@@ -17,6 +17,8 @@ class Tester:
         """
         self.learning_params = learning_params
         self.testing_params = testing_params
+        self.agent_event_spaces_dict = {}
+        self.shared_events_dict = {}
 
         # Keep track of the number of learning/testing steps taken
         self.min_steps = min_steps

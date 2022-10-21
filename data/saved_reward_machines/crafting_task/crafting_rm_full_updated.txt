@@ -1,0 +1,36 @@
+0 # initial state 
+(0, 1, 'a1', 0) # 1 = a1 only 
+(0, 2, 'a2', 0) # 2 = a2 only 
+(0, 3, 'a3', 0) # 3 = a3 only
+(1, 4, 'a2', 0) # 4 = a2 and a1
+(2, 4, 'a1', 0)
+(1, 5, 'a3', 0) # 5 = a3 and a1
+(3, 5, 'a1', 0)
+(2, 6, 'a3', 0) # 6 = a3 and a2
+(3, 6, 'a2', 0)
+(1, 0, 'l1', 0) 
+(2, 0, 'l2', 0)  
+(3, 0, 'l3', 0) 
+(4, 1, 'l2', 0) 
+(4, 2, 'l1', 0)
+(5, 1, 'l3', 0) 
+(5, 3, 'l1', 0)
+(6, 2, 'l3', 0) 
+(6, 3, 'l2', 0)
+(4, 71, 'cutting', 0) # only 1 event, 
+(5, 72, 'cutting', 0)
+(6, 73, 'cutting', 0)
+(71, 4, 'st_cutting', 0) # only 1: this is if you want to make them stay at the place for a certain amount of time. 
+(72, 5, 'st_cutting', 0)
+(73, 6, 'st_cutting', 0)
+(71, 8, 'timber', 0) # log appears 
+(72, 8, 'timber', 0) # log appears 
+(73, 8, 'timber', 0) # log appears 
+(8, 9, 'tr1', 0 )
+(8, 9, 'tr2', 0)
+(8, 9, 'tr3', 0)
+(9, 9, 'tr1', 0)
+(9, 9, 'tr2', 0)
+(9, 9, 'tr3', 0)
+(9, 10, 'ar', 0) # log arrives # 
+(10, 11, 'craft', 1)

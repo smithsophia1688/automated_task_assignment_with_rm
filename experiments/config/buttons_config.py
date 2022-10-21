@@ -19,10 +19,12 @@ def buttons_config(num_times, num_agents):
 
     joint_rm_file = os.path.join(base_file_path, 'data', 'saved_reward_machines', 'buttons', 'team_buttons_rm.txt')
 
-    local_rm_files = []
+    local_rm_files = [] # NEED TO UPDATE WHERE THE LOCAL RM FILES ARE RETRIEVED. add a config attribute to "what type of decomp" we are learningn on?
+    
     for i in range(num_agents):
-        local_rm_string = os.path.join(base_file_path, 'data', 'saved_reward_machines', 'buttons', 'buttons_rm_agent_{}.txt'.format(i+1))
+        local_rm_string = os.path.join(base_file_path, 'data', 'saved_reward_machines', 'buttons', 'buttons_rm_agent_{}.txt'.format(i+1)) # should be base_file_path + returned_name
         local_rm_files.append(local_rm_string)
+
 
     step_unit = 1000
 

@@ -1,12 +1,12 @@
 import itertools 
-print("AT ONE b")
+
 import task_assignment.helper_functions as hf
-print("AT ONC c")
+
 
 ### Holds Configurations class that holds the task assignment experiment details and decomposition metric
 
 class Configurations():
-    def __init__(self, num_agents, rm, enforced_set = None, forbidden_set = None, agent_utility_function = None, weights = None ):
+    def __init__(self, num_agents, rm, enforced_set = None, forbidden_set = None, agent_utility_function = None, weights = None , incompatible_pairs = None):
         '''
         This is for experiment parameters that do not change throughout the experiment. 
         Also for defining functions for calculating scores
@@ -41,7 +41,8 @@ class Configurations():
         self.num_agents = num_agents
         self.agents = [i for i in range(num_agents)] 
         self.all_events = set(itertools.product(rm.events, self.agents)) #should be all events
-        
+        #print("rm events", rm.events)
+        #print("agents", self.agents)
         
         if weights: 
             self.weights = weights
@@ -63,6 +64,10 @@ class Configurations():
             self.forbidden_set = set()
         
         tree_events = self.all_events - self.forbidden_set - self.enforced_set
+        #print("all", self.all_events)
+        #print("forbbiden", self.forbidden_set)
+        #print("enforced", self.enforced_set)
+
         self.future_events = list(tree_events)
 
         self.max_knapsack_size = len(self.all_events) - len(self.enforced_set)
@@ -84,6 +89,15 @@ class Configurations():
         for a, ed in self.agent_utility_function.items():
             for e, u in ed.items():
                 self.total_utility_score += u
+        
+        if incompatible_pairs:
+            self.incompatible_pairs = incompatible_pairs
+        else:
+            self.incompatible_pairs = []
+
+        self.restrictions = {'enforced_assignments': self.enforced_set, 'incompatible_assignments': self.incompatible_pairs, 'forbidden_assingments': self.forbidden_set}
+        self.type = 'no_accidents'
+
     
     def get_utility(self, agent, event):
         return self.agent_utility_function[agent][event]
@@ -139,9 +153,9 @@ class Configurations():
         '''
         event_spaces, event_spaces_dict = hf.get_event_spaces_from_knapsack(self.all_events, knapsack)
 
-        se  = self.get_shared_event_score(self.knapsack)
-        f = self.get_fairness_score(self.knapsack, event_spaces_dict)
-        u = self.get_utility_score(self.knapsack)
+        se  = self.get_shared_event_score(knapsack)
+        f = self.get_fairness_score(knapsack, event_spaces_dict)
+        u = self.get_utility_score(knapsack)
         
         se_weight, f_weight, u_weight = self.weights
         score = se * se_weight + f * f_weight + u * u_weight

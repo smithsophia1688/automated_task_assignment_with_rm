@@ -4,8 +4,11 @@
 import task_assignment.helper_functions as hf
 from reward_machines.sparse_reward_machine import SparseRewardMachine as sparse
 import task_assignment.bisimilarity_check as bs
+
+
+
 class Node:
-    def __init__(self, name = None, children = None, value = -1, knapsack = None, future_events = None, all_events = None, depth = 0):
+    def __init__(self, name = None, children = None, value = -1, knapsack = None, future_events = None, all_events = None, depth = 0, doomed = True):
         if name: ## 'root' -> next_event_name= self.future_events[0]
             self.name = name
         else: 
@@ -34,6 +37,8 @@ class Node:
         else:
             self.all_events = set()
         self.depth = depth ## 0 in 'root' (not passed) -> new_depth (depth +1)
+        
+        self.doomed = doomed
 
     def __repr__(self):
         s =  "(" + str(self.name) + ", " + str(self.value) + ")"
@@ -75,11 +80,84 @@ class Node:
         rm_parallel = bs.put_many_in_parallel(rms) 
 
         is_decomp = True
-        if self.value != 0: # only check if you changed something
-            is_decomp = bs.is_decomposable(configs.rm, rm_parallel, agent_event_spaces_dict, configs.num_agents, enforced_set = configs.enforced_set)
+        #if self.value != 0: # only check if you changed something
+        is_decomp = bs.is_decomposable(configs.rm, rm_parallel, agent_event_spaces_dict, configs.num_agents, enforced_set = configs.enforced_set, incompatible_pairs = configs.incompatible_pairs, upcomming_events = self.future_events)
 
         return is_decomp
 
+    def run_check_2(self, configs):
+
+        if configs.type != 'no_accidents':
+            print("Freak out not ready for accidents yet")
+
+        event_spaces, agent_event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, self.knapsack)
+
+        restrictions_pass, have_hope = bs.check_restrictions(configs, agent_event_spaces_dict, self.future_events)
+
+        if restrictions_pass: # here, we satisfied all of our restrictions
+            bisim_check, check_children = bs.is_decomposible_no_accidents(configs, event_spaces) 
+
+        else:
+            if have_hope: 
+                bisim_check = False
+                check_children = True # default is to check all children 
+                # restrictions have failed but there is hope they are fixed. What should I do? 
+
+            else:
+                bisim_check = False
+                check_children = False
+
+        return bisim_check, check_children #need to incorperate this into my tree search. 
+            
+    def check_win_ability(self, configs, event_spaces):
+        '''
+        This function checks if removing the assingments 
+        in a given knapsack (leaving the event_spaces) leaves
+        a winnable strategy
+        '''
+        strategy_set = set()
+        for es in event_spaces:
+            strategy_set = strategy_set.union(es)
+
+        strategic_rm = bs.remove_rm_transitions(configs.rm, strategy_set) 
+        bs.remove_unreachable_states(strategic_rm)
+
+        if not bs.can_win_check(strategic_rm):
+            self.doomed = False 
+        
+    def check_sufficent_agents(self, configs, agent_event_spaces_dict):
+        active_agents = []
+        for a, es in agent_event_spaces_dict.items():
+            if es:
+                active_agents.append(a)
+        if len(active_agents) != configs.num_agents:
+            # you have removed too many agents
+            self.doomed = False
+
+
+    def check_incompatible_assignments(self, configs, agent_event_spaces_dict):
+        pass
+
+    def run_check_last_minute(self, configs): 
+        event_spaces, agent_event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, self.knapsack)
+        
+        if not self.doomed:
+            self.check_sufficent_agents(configs, agent_event_spaces_dict)
+        if not self.doomed:
+            self.check_incompatible_assignments()
+        if not self.doomed:
+            self.check_win_ability(configs, event_spaces)
+        
+
+        
+    # need a function to check if I have a winning strategy (return True/ False) DONE
+    # need a function to check if I have incompatible assignments and if I have hope for kids 
+    # need a function that checks if a valid node is bisimilar 
+    # need a function that coordinates this and records through node flags. (i hate flags)
+
+    # flags I will need: node_doomed, value (1 or 0) did I change something, is_valid (True if "happy", False if "sad")
+    # Not I can be is_valid = False and not be doomed (depends on how I got there and where I am going)
+    
     def small_traverse(self, configs, best_sack = (0, [])):
         '''
         Recursive function
@@ -101,12 +179,13 @@ class Node:
 
         if prints:
             ## PRINT STATEMENTS ##
-            s_start = '\t |' * self.depth +"--"
-            s = s_start + str(self) + " acting on knapsack " + str(self.knapsack) + " with " + str(len(self.future_events)) + " future events"
+            s_start = '\t |' * self.depth + "--"
+            s = s_start + str(self) + " with " + str(len(self.future_events)) + " future events"
             print(s)
             #######################
 
         is_decomp = self.run_check(configs)
+
 
         if prints:
             ## PRINT STATEMENTS ##
@@ -119,17 +198,20 @@ class Node:
             #######################
 
         # if decomposible and remaining events to add, add children with values 1 & 0
-        if is_decomp:
+        
+        if is_decomp: # I think I need to get rid of this condition? or is it I should not fail the decomp.. 
+
             if self.future_events: 
                 # build children 
+
                 next_event_name  = self.future_events[0]
                 next_events = self.future_events[1:]
                 new_depth = self.depth + 1
                 new_knapsack = self.knapsack.union({next_event_name}) # will only be used for child_1
 
                 # add children
-                child_1 = Node(name = next_event_name, value = 1, knapsack = new_knapsack, future_events = next_events , all_events = self.all_events, depth = new_depth)
-                child_0 = Node(name = next_event_name, value = 0, knapsack = self.knapsack, future_events = next_events , all_events = self.all_events, depth = new_depth)
+                child_1 = Node(name = next_event_name, value = 1, knapsack = new_knapsack, future_events = next_events, all_events = self.all_events, depth = new_depth)
+                child_0 = Node(name = next_event_name, value = 0, knapsack = self.knapsack, future_events = next_events, all_events = self.all_events, depth = new_depth)
                 self.add_children([child_1, child_0])
 
             if not self.children:
@@ -171,4 +253,63 @@ class Node:
 
         return best_sack
 
+    def new_traverse(self, configs, best_sack = (0, [])):
+
+        if self.depth <= 9:
+            prints = True
+        else: 
+            prints = False
+
+        if prints:
+            ## PRINT STATEMENTS ##
+            s_start = '\t |' * self.depth + "--"
+            s = s_start + str(self) + " with " + str(len(self.future_events)) + " future events"
+            print(s)
+            #######################
+
+        # step 1: check if our knapsack is decomposible and if we should check the kids
+        is_decomp, check_kids = self.run_check_2(configs)
+        #craft_check = False
+        #if ('craft', 2) in self.knapsack: 
+        #    craft_check = True
+        #    print(self.knapsack, is_decomp, check_kids)
+
+        # step 2: if check kids, add kids. 
+        if check_kids: 
+            if self.future_events:  # Make children if I can
+                next_event_name  = self.future_events[0]
+                next_events = self.future_events[1:]
+                new_depth = self.depth + 1
+                new_knapsack = self.knapsack.union({next_event_name}) # will only be used for child_1
+
+                # Add children
+                child_1 = Node(name = next_event_name, value = 1, knapsack = new_knapsack, future_events = next_events, all_events = self.all_events, depth = new_depth)
+                child_0 = Node(name = next_event_name, value = 0, knapsack = self.knapsack, future_events = next_events, all_events = self.all_events, depth = new_depth)
+                self.add_children([child_1, child_0])
+
+            else: # there are no future event events to add as kids
+                if is_decomp: # If decomposible, I should collect data on this node. 
+                    knap_score = configs.get_score(self.knapsack)
+                    if knap_score >= best_sack[0]:
+                        if knap_score == best_sack[0]:
+                            best_sack[1].append(self.knapsack) # this could get really long 
+                        else:
+                            best_sack = (knap_score, [self.knapsack])
+
+        else:  # don't bother checking kids. 
+            if is_decomp: # I don't think this can ever happen, if it does, collect score
+                print("WTF ")
+                knap_score = configs.get_score(self.knapsack)
+                if knap_score >= best_sack[0]:
+                    if knap_score == best_sack[0]:
+                        best_sack[1].append(self.knapsack) # this could get really long 
+                    else:
+                        best_sack = (knap_score, [self.knapsack])
+
+        
+        # Recursion Step: 
+        for child in self.children:
+            best_sack = child.new_traverse(configs, best_sack = best_sack)
+
+        return best_sack
 

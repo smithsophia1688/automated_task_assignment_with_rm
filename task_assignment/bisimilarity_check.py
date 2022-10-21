@@ -1,6 +1,6 @@
 import itertools
 from reward_machines.sparse_reward_machine import SparseRewardMachine
-
+import task_assignment.helper_functions as hf
 
 class EquivalenceRelation:
     '''
@@ -157,8 +157,6 @@ class EquivalenceRelation:
             for x in related_combos:
                 all_related_combos.add(x)
         return all_related_combos    
-
-
 
 def get_relation(event_space, rm):
     '''
@@ -447,6 +445,7 @@ def is_bisimilar(rm_1, rm_2):
     rm_2_o = rm_2.get_initial_state()
     todo.append((rm_1_o , rm_2_o)) #line 2
 
+    #print("starting todo ", todo)
     while todo: # line 3
         # need to remove m from todo
         m = todo[0] # line 3.1
@@ -455,6 +454,7 @@ def is_bisimilar(rm_1, rm_2):
 
         if m not in R:  # line 3.2  really says, if m in R then skip # TODO: check skip meaning 
             # Do everything below 
+
             if rm_1.is_terminal_state(x) != rm_2.is_terminal_state(y): # line 3.3
                 #print("Was false, one of these is terminal and the other is not:")
                 #print("in rm_1", x, "terminal is",rm_1.T) 
@@ -470,7 +470,90 @@ def is_bisimilar(rm_1, rm_2):
             R.append(m)  # line 3.5            
     return True #line 4
 
-def is_decomposable(rm_f, rm_p, agent_event_spaces_dict, num_agents, enforced_set = None, prints = False): #rm_p should not be an entry in this? yy
+
+def can_win_check(rm, goal_state = None):
+    '''
+    Checks to see if there is a transition sequence that lands us at '''
+
+    if goal_state != None:
+        final_states = {goal_state}
+    else:
+        terminal_set = rm.T
+        final_states = terminal_set.copy()
+
+    for u in final_states:
+        if u == rm.u0:
+            return True
+
+    reachability_set = final_states
+    keep_searching = True
+
+    while keep_searching:
+        origins = rm.get_origins(reachability_set)
+        new_origins = origins - reachability_set
+        if len(new_origins) == 0:  
+            return False
+        for u in new_origins:
+            if u == rm.u0:
+                return True
+            reachability_set.add(u)
+
+    return False
+
+def remove_rm_transitions(rm, strategy_set): # should really be called remove_transitions
+    '''
+    return a reward machine with only transitions in strategy_set remaining. 
+    '''
+    strategic_rm = SparseRewardMachine()
+    strategic_rm.U = rm.U.copy()
+    strategic_rm.events = strategy_set
+    strategic_rm.u0 = rm.u0
+    strategic_rm.T = rm.T.copy()
+    strategic_rm.equivalence_class_name_dict = rm.equivalence_class_name_dict.copy()  
+
+    non_strat_set = rm.events - strategy_set
+    #print('non strat set', non_strat_set)
+    strategic_rm.delta_u = {}
+    strategic_rm.delta_r = {}
+
+    for u_1, transition_dict in rm.delta_u.items():
+        td_copy = transition_dict.copy()
+        rd = rm.delta_r[u_1]
+        rd_copy = rd.copy()
+        for e in non_strat_set:
+            if e in td_copy.keys():
+                u2 = td_copy[e]
+                if u2 in rd_copy.keys():
+                    rd_copy.pop(u2)
+                td_copy.pop(e)
+        strategic_rm.delta_u[u_1] = td_copy
+        strategic_rm.delta_r[u_1] = rd_copy
+
+        # you have to do a similar thing to reward.
+
+    #print("  ")
+    return(strategic_rm)
+
+def remove_unreachable_states(rm):
+    unreachable = set()
+    for u in rm.U:
+        #print("looking at ", u)
+        if not can_win_check(rm, u):
+            unreachable.add(u)
+            if u in rm.delta_u.keys():
+                rm.delta_u.pop(u)
+            if u in rm.delta_u.keys():
+                rm.delta_r.pop(u)
+
+    #print("unreachable is", unreachable) 
+    new_U = []
+    for u in rm.U:
+        if u not in unreachable:
+            new_U.append(u)
+    rm.U = new_U
+    #print("rm U is", rm.U)
+    
+def is_decomposable(rm_f, rm_p, agent_event_spaces_dict, num_agents, enforced_set = None, prints = False, incompatible_pairs = None, upcomming_events= None): #rm_p should not be an entry in this? yy
     '''
     Checks all three conditions for rm_p and rm_f being 
     a passable decomposition. 
@@ -491,10 +574,10 @@ def is_decomposable(rm_f, rm_p, agent_event_spaces_dict, num_agents, enforced_se
     Returns: bool
     '''
     ##### 1 All events are assigned ####
-    if rm_p.events != rm_f.events:
-        if prints:
-            print("fails case 1, some events are not assigned")
-        return False
+    #if rm_p.events != rm_f.events:
+    #    if prints:
+    #        print("fails case 1, some events are not assigned")
+    #    return False
     
     #### 2 All agents must have an assignment #####
     active_agents = []
@@ -517,7 +600,20 @@ def is_decomposable(rm_f, rm_p, agent_event_spaces_dict, num_agents, enforced_se
                 if prints:
                     print(" fails case 3, agents don't have required events")
                 return False
-
+    ##### 4 incompatible pairs #### give pairs of events that cannot be assigned to the same agents
+    if incompatible_pairs == None:
+        incompatible_pairs = []
+    for pair in incompatible_pairs:
+        e1 , e2 = pair
+        for a , es in agent_event_spaces_dict.items():
+            if e1 in es:
+                if e2 in es:
+                    if (e1, a) not in upcomming_events: 
+                        if (e2, a) not in upcomming_events:
+                            if prints:
+                                print(" doomed forever" , (e1,a), (e2,a) , upcomming_events, agent_event_spaces_dict)
+                            return False
+                    
     ##### 5 bisimilarity holds ####
     if not is_bisimilar(rm_p, rm_f):
         if prints:
@@ -526,4 +622,138 @@ def is_decomposable(rm_f, rm_p, agent_event_spaces_dict, num_agents, enforced_se
     
     return True 
 
+# You should still do incompatible_pairs. 
+# 
+#restrictions = {'enforced_assignments': enforced_set, 'incompatible_assignments': incompatible_pairs, 'forbidden_assingments': forbidden_set}
 
+# I want a function that runs a check for no_accidents: 
+def check_restrictions(configs, agent_event_spaces_dict, upcomming_events):  # If it is easier for this to take knapsack we can do that too. 
+    '''
+    this function checks if a knapsack satisfes the forbidden, enforced, and incompatible assignments. 
+    '''
+    restrictions = configs.restrictions
+
+    have_hope = True
+    restrictions_pass = True
+    ########## check all agents assigned something? ### (REMOVE?) ######
+    active_agents = []
+    for a, es in agent_event_spaces_dict.items():
+        if es:
+            active_agents.append(a)
+    
+    if len(active_agents) != configs.num_agents:
+        # you have removed too many agents
+        restrictions_pass = False
+        have_hope = False
+        return restrictions_pass, have_hope
+
+    ######### check all enforced events are assigned ################## 
+    enforced_assignments = restrictions['enforced_assignments']
+    for i in enforced_assignments: 
+        ev, ag = i
+        if ev not in agent_event_spaces_dict[ag]:
+            restrictions_pass = False
+            have_hope = False
+            return restrictions_pass, have_hope
+
+    ########### Check if incompatible events are violated #############
+    incompatible_pairs = restrictions['incompatible_assignments']
+    for pair in incompatible_pairs:
+        e1 , e2 = pair
+        for a , es in agent_event_spaces_dict.items():
+            if e1 in es:
+                if e2 in es:
+                    restrictions_pass = False # this one failed, but is there hope? 
+                    if (e1, a) not in upcomming_events: 
+                        if (e2, a) not in upcomming_events:
+                            # neither event is in upcomming. fails
+                            have_hope = False
+                            return restrictions_pass, have_hope
+
+    return restrictions_pass, have_hope
+                    
+
+
+def is_decomposible_no_accidents(configs, event_spaces):
+    # have already satisfied that it does not break any restrictions. 
+
+    # check if valid "no accidents" strategy 
+    strategy_set = set()
+    for es in event_spaces:
+        strategy_set = strategy_set.union(es)
+
+    strategic_rm = remove_rm_transitions(configs.rm, strategy_set) 
+    remove_unreachable_states(strategic_rm)
+
+    if can_win_check(strategic_rm): # check if it is a valid strategy ?
+        # yes? continue on to check if bisimilar. 
+        rms = []
+
+        for es in event_spaces:
+            rm_p = project_rm(es, strategic_rm)  #project each reward machine down onto the event spaces
+            rms.append(rm_p)
+
+        rm_parallel = put_many_in_parallel(rms) 
+        bisim_check = is_bisimilar(rm_parallel, strategic_rm)
+
+        check_children = True # default is to check all children even if "bisim" fails. Why not. # CHECK 
+
+    else: # You removed an unforgivable edge. You can no longer reach the end. There is no fixing this. 
+        bisim_check = False
+        check_children = False
+
+    return bisim_check, check_children 
+
+def get_strategy_rm(rm, strategy_set):
+    
+    strategic_rm = remove_rm_transitions(rm, strategy_set)
+    remove_unreachable_states(strategic_rm)
+    return strategic_rm
+
+
+def get_accident_avoidance_rm(individual_rm, accident_set):
+    dead_state = -1
+    dead_reward = -1
+    acc_rm_u = individual_rm.U.copy()
+    acc_rm_e = individual_rm.events.copy()
+    acc_rm_T = individual_rm.T.copy()
+    acc_rm_u0 = individual_rm.u0
+    
+    delta_u = {}
+    delta_r = {}
+    for u, td in individual_rm.delta_u.items():
+        delta_u[u] = td.copy()
+    for u, rd in individual_rm.delta_r.items():
+        delta_r[u] = rd.copy()
+
+    for e in accident_set:
+        acc_rm_e.add(e)
+        for u in acc_rm_u:
+            if u in delta_u.keys():
+                td = delta_u[u]
+            else:
+                td = {}
+            td[e] = dead_state
+
+            delta_u[u] = td
+        for v in acc_rm_u:
+            if v in delta_r.keys():
+                rd = delta_r[v]
+            else:
+                rd = {}
+            rd[dead_state] = dead_reward 
+            delta_r[v] = rd
+            
+
+    acc_rm_u.append(dead_state)
+    acc_rm_T.add(dead_state)
+
+    acc_rm = SparseRewardMachine()
+    acc_rm.U = acc_rm_u
+    acc_rm.events = acc_rm_e
+    acc_rm.T = acc_rm_T
+    acc_rm.u0 = acc_rm_u0
+    acc_rm.delta_u = delta_u
+    acc_rm.delta_r = delta_r
+
+    return acc_rm

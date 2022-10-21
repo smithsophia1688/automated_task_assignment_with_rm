@@ -8,8 +8,8 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/experiments/run.py",
-            "cwd" : "${workspaceFolder}/experiments",
+            "program": "${workspaceFolder}/run_crafting_experiment_trivial.py",
+            "cwd" : "${workspaceFolder}",
             "console": "integratedTerminal",
             "justMyCode": false
         }
