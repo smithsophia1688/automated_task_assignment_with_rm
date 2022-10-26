@@ -103,9 +103,9 @@ print(pm_par)
 print(bs.is_bisimilar(strategic_rm, pm_par))
 
 
-aap1 = bs.get_accident_avoidance_rm(p1, acc_set) 
-aap2 = bs.get_accident_avoidance_rm(p2, acc_set)
-aap3 = bs.get_accident_avoidance_rm(p3, acc_set)
+aap1 = bs.get_accident_avoidance_rm_less(p1, acc_set, rm) 
+aap2 = bs.get_accident_avoidance_rm_less(p2, acc_set, rm)
+aap3 = bs.get_accident_avoidance_rm_less(p3, acc_set, rm)
 
 aap_dict = {0: aap1, 1: aap2, 2: aap3}
 

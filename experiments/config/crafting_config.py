@@ -66,6 +66,8 @@ def crafting_config_ta(num_times, num_agents, rm_files, agent_event_spaces_dict,
     env_settings['craft_table'] = (1,9)
     env_settings['tree_loc'] = (0, 3)
     env_settings['log_loc'] = (0, 4)
+    env_settings['thresh'] = .9
+    env_settings['end_thresh'] = .9
     
 
     env_settings['p'] = 0.98

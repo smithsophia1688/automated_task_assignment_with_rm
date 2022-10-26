@@ -50,11 +50,15 @@ configs = Configurations(num_agents, rm, enforced_set = enforced_agent_event_dic
 root = Node(name = 'root', future_events = configs.future_events, all_events= configs.all_events, knapsack = configs.forbidden_set) #forbidden set is the starting knapsack
 print("tree events", configs.future_events)
 
-bd = root.new_traverse(configs)
+#bd = root.new_traverse(configs)
+
+bd = root.traverse_last_minute_change(configs)
 hf.print_results(configs, bd)
-knapsack = bd[1][0] # arbitrary pick 
+#knapsack = bd[1][0] # arbitrary pick 
 
 
+knapsack_id = input(" Which TA do you want? ")
+knapsack = bd[1][int(knapsack_id)]
 
 print("--- %s seconds ---" % (time.time() - start_time))
 
@@ -110,9 +114,9 @@ print(pm_par)
 print(bs.is_bisimilar(strategic_rm, pm_par))
 
 
-aap1 = bs.get_accident_avoidance_rm(p1, acc_set) 
-aap2 = bs.get_accident_avoidance_rm(p2, acc_set)
-aap3 = bs.get_accident_avoidance_rm(p3, acc_set)
+aap1 = bs.get_accident_avoidance_rm_less(p1, acc_set, rm) 
+aap2 = bs.get_accident_avoidance_rm_less(p2, acc_set, rm)
+aap3 = bs.get_accident_avoidance_rm_less(p3, acc_set, rm)
 
 aap_dict = {0: aap1, 1: aap2, 2: aap3}
 

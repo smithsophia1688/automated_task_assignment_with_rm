@@ -1,6 +1,6 @@
 import numpy as np
 import random, time
-
+import pickle
 from tester.tester import Tester
 from Agent.agent import Agent
 from Environments.coop_buttons.buttons_env import ButtonsEnv
@@ -43,12 +43,14 @@ def run_qlearning_task(epsilon,
 
     num_steps = learning_params.max_timesteps_per_task
     traject = {0:[], 1:[], 2:[]}
+    
     # Load the appropriate environments for training
     if tester.experiment == 'crafting':
         training_environments = []
         for i in range(num_agents): 
             training_environments.append(CraftingEnv(agent_list[i].rm_file, i, tester.env_settings, tester.shared_events_dict[i], tester.agent_event_spaces_dict[i])) 
-
+    
+    full_trajectory = {0:[], 1:[], 2:[]} 
     for t in range(num_steps):
         # Update step count
         tester.add_step()
@@ -59,12 +61,13 @@ def run_qlearning_task(epsilon,
                 #if not(agent_list[i].is_task_complete): 
                 current_u = agent_list[i].u
                 s, a = agent_list[i].get_next_action(epsilon, learning_params)
+                
                 r, l, s_new = training_environments[i].environment_step(s,a)
                 if l:
                     old_traj = traject[i] #TODO: PUT BREAK HERE
                     old_traj.append(l[0])
                     traject[i] = old_traj
-
+                full_trajectory[i].append(s_new) # collect the states for each step 
                 # a = training_environments[i].get_last_action() # due to MDP slip #TODO: there is slip
                 agent_list[i].update_agent(s_new, a, r, l, learning_params) 
 
@@ -90,7 +93,7 @@ def run_qlearning_task(epsilon,
         if testing_params.test and tester.get_current_step() % testing_params.test_freq == 0:
             t_init = time.time()
             step = tester.get_current_step()
-
+            tester.individual_training_trace[step]= full_trajectory
             agent_list_copy = []
 
             # Need to create a copy of the agent for testing. If we pass the agent directly
@@ -161,7 +164,6 @@ def run_qlearning_task(epsilon,
         if tester.stop_learning():
             break
         
-
 def run_multi_agent_qlearning_test(agent_list,
                                     tester,
                                     learning_params,
@@ -213,7 +215,6 @@ def run_multi_agent_qlearning_test(agent_list,
     testing_reward = 0
 
     trajectory = []
-
     step = 0
     accident_occured = False 
 
@@ -229,11 +230,12 @@ def run_multi_agent_qlearning_test(agent_list,
             a_team[i] = a
             u_team[i] = agent_list[i].u
 
-        # trajectory.append({'s' : np.array(s_team, dtype=int), 'a' : np.array(a_team, dtype=int), 'u_team': np.array(u_team, dtype=int), 'u': int(testing_env.u)})
+        #trajectory.append({'s' : np.array(s_team, dtype=int), 'a' : np.array(a_team, dtype=int), 'u_team': np.array(u_team, dtype=int), 'u': int(testing_env.u)})
+        
 
         r, l, s_team_next = testing_env.environment_step(s_team, a_team)
-        if l:
-            trajectory.append(l)
+
+        trajectory.append({'s': np.array(s_team_next, dtype=int), 'l': l })
 
         if not accident_occured:
             for j in l:
@@ -242,7 +244,6 @@ def run_multi_agent_qlearning_test(agent_list,
                         accident_occured = True
 
         testing_reward = testing_reward + r
-
 
         ####  
         projected_l_dict = {}
@@ -298,11 +299,16 @@ def run_multi_agent_qlearning_test(agent_list,
         #    break
     
     if show_print:
-        print('Reward of {} achieved in {} steps. Current step: {} of {}'.format(testing_reward, step, tester.current_step, tester.total_steps))
-        if (testing_reward > 0) and accident_occured: 
-            print("     The team won by accident.    ")
-        if (testing_reward > 0):
-            print(f"     The team got  a reward of {testing_reward} in {step}  steps. Agent {testing_env.carrying_agent + 1} was transporting the log. ")
+        if testing_reward > 0:
+            print('Reward of {} achieved in {} steps. Current step: {} of {} with Agent {} carrying the log'.format(testing_reward, step, tester.current_step, tester.total_steps, testing_env.carrying_agent + 1))
+        else: 
+            print('Reward of {} achieved in {} steps. Current step: {} of {}'.format(testing_reward, step, tester.current_step, tester.total_steps))
+
+
+        #if (testing_reward > 0) and accident_occured: 
+        #   print("     The team won by accident.    ")
+        #if (testing_reward > 0):
+        #    print(f"     The team got  a reward of {testing_reward} in {step}  steps. Agent {testing_env.carrying_agent + 1} was transporting the log. ")
 
     return testing_reward, trajectory, step
 
@@ -351,6 +357,7 @@ def run_multi_agent_experiment(tester,
             testing_env = MultiAgentCraftingEnv(tester.rm_test_file, num_agents, tester.env_settings) # In decentralized learning, need to include extra things
             num_states = testing_env.num_states
 
+        tester.individual_training_trace = {}
 
         # Create the a list of agents for this experiment
         agent_list = []  #literally holds agents objects 
@@ -378,6 +385,15 @@ def run_multi_agent_experiment(tester,
         print('Finished iteration ',t)
 
     tester.agent_list = agent_list
+
+    #filename = 'file_name_pi.obj'
+    #filehandler = open(filename, 'w') 
+    #pickle.dump(tester, filehandler)
+    #print(tester.individual_training_trace)
+    #print("  ")
+    #print(tester.results)
+    #file_tester = open(filename, 'w') 
+    #pickle.dump(tester, file_tester)
 
     plot_multi_agent_results(tester, num_agents)
 

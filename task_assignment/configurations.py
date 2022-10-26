@@ -6,7 +6,7 @@ import task_assignment.helper_functions as hf
 ### Holds Configurations class that holds the task assignment experiment details and decomposition metric
 
 class Configurations():
-    def __init__(self, num_agents, rm, enforced_set = None, forbidden_set = None, agent_utility_function = None, weights = None , incompatible_pairs = None):
+    def __init__(self, num_agents, rm, enforced_set = None, forbidden_set = None, agent_utility_function = None, weights = None , incompatible_pairs = None, include_all = True):
         '''
         This is for experiment parameters that do not change throughout the experiment. 
         Also for defining functions for calculating scores
@@ -41,6 +41,7 @@ class Configurations():
         self.num_agents = num_agents
         self.agents = [i for i in range(num_agents)] 
         self.all_events = set(itertools.product(rm.events, self.agents)) #should be all events
+        self.include_all = include_all
         #print("rm events", rm.events)
         #print("agents", self.agents)
         

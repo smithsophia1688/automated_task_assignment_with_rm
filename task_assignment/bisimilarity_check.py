@@ -264,7 +264,9 @@ def project_rm(event_space, rm):
                     reward = 0
                 #print("add transition", v1_name, v2_name, e, reward)
                 new_rm.add_transition_and_reward_only(v1_name, v2_name, e, reward)
-
+    
+    if rm.dead_transitions != None:
+        new_rm.dead_transitions = rm.dead_transitions
     return new_rm  
 
 def put_in_parallel(rm1, rm2):
@@ -470,11 +472,13 @@ def is_bisimilar(rm_1, rm_2):
             R.append(m)  # line 3.5            
     return True #line 4
 
-
-def can_win_check(rm, goal_state = None):
+def can_win_check(rm, goal_state = None, u0 = None):
     '''
     Checks to see if there is a transition sequence that lands us at '''
 
+    if u0 == None:
+        u0= rm.u0
+    
     if goal_state != None:
         final_states = {goal_state}
     else:
@@ -482,7 +486,7 @@ def can_win_check(rm, goal_state = None):
         final_states = terminal_set.copy()
 
     for u in final_states:
-        if u == rm.u0:
+        if u == u0: #was rm.u0
             return True
 
     reachability_set = final_states
@@ -494,7 +498,7 @@ def can_win_check(rm, goal_state = None):
         if len(new_origins) == 0:  
             return False
         for u in new_origins:
-            if u == rm.u0:
+            if u == u0: #was rm.u0
                 return True
             reachability_set.add(u)
 
@@ -517,14 +521,22 @@ def remove_rm_transitions(rm, strategy_set): # should really be called remove_tr
     strategic_rm.delta_r = {}
 
     for u_1, transition_dict in rm.delta_u.items():
+        if u_1 == 8:
+            pause = True
         td_copy = transition_dict.copy()
         rd = rm.delta_r[u_1]
         rd_copy = rd.copy()
         for e in non_strat_set:
             if e in td_copy.keys():
                 u2 = td_copy[e]
+                get_rid = True
+                for se in strategy_set:
+                    if se in rm.delta_u[u_1].keys():
+                        if rm.delta_u[u_1][se] == u2:
+                            get_rid = False
                 if u2 in rd_copy.keys():
-                    rd_copy.pop(u2)
+                    if get_rid == True:
+                        rd_copy.pop(u2)
                 td_copy.pop(e)
         strategic_rm.delta_u[u_1] = td_copy
         strategic_rm.delta_r[u_1] = rd_copy
@@ -552,7 +564,51 @@ def remove_unreachable_states(rm):
             new_U.append(u)
     rm.U = new_U
     #print("rm U is", rm.U)
-    
+
+def remove_dead_transitions(rm):
+    #print("before dead transitions")
+    #print(rm)
+
+    dead_states = set()
+    bad_dict = {}
+    for u in rm.U:
+        if can_win_check(rm, u0 = u) == False:
+            dead_states.add(u)
+            for v in rm.U:
+                if v in bad_dict.keys():
+                    bad_dict_v = bad_dict[v]
+                else:
+                    bad_dict_v = {}
+                if v != u:
+                    if v in rm.delta_u.keys():
+                        td = rm.delta_u[v].copy()
+                        for e, v2 in td.items():
+                            if v2 == u:
+                                bad_dict_v[e] = u
+                                rm.delta_u[v].pop(e)
+
+                    if v in rm.delta_r.keys():
+                        rd = rm.delta_r[v].copy()
+                        for v3, r in rd.items():
+                            if v3 == u:
+                                rm.delta_r[v].pop(u)
+                else:
+                    if u in rm.delta_u.keys():
+                        bad_dict[u] = rm.delta_u[u]
+                        rm.delta_u.pop(u)
+                    if u in rm.delta_u.keys():
+                         rm.delta_r.pop(u)
+
+                bad_dict[v] = bad_dict_v
+
+    new_U = []
+    for u in rm.U:
+        if u not in dead_states:
+            new_U.append(u)
+    rm.U = new_U
+    rm.dead_transitions = bad_dict 
+
+
 def is_decomposable(rm_f, rm_p, agent_event_spaces_dict, num_agents, enforced_set = None, prints = False, incompatible_pairs = None, upcomming_events= None): #rm_p should not be an entry in this? yy
     '''
     Checks all three conditions for rm_p and rm_f being 
@@ -622,11 +678,6 @@ def is_decomposable(rm_f, rm_p, agent_event_spaces_dict, num_agents, enforced_se
     
     return True 
 
-# You should still do incompatible_pairs. 
-# 
-#restrictions = {'enforced_assignments': enforced_set, 'incompatible_assignments': incompatible_pairs, 'forbidden_assingments': forbidden_set}
-
-# I want a function that runs a check for no_accidents: 
 def check_restrictions(configs, agent_event_spaces_dict, upcomming_events):  # If it is easier for this to take knapsack we can do that too. 
     '''
     this function checks if a knapsack satisfes the forbidden, enforced, and incompatible assignments. 
@@ -672,8 +723,6 @@ def check_restrictions(configs, agent_event_spaces_dict, upcomming_events):  # I
 
     return restrictions_pass, have_hope
                     
-
-
 def is_decomposible_no_accidents(configs, event_spaces):
     # have already satisfied that it does not break any restrictions. 
 
@@ -704,12 +753,14 @@ def is_decomposible_no_accidents(configs, event_spaces):
 
     return bisim_check, check_children 
 
-def get_strategy_rm(rm, strategy_set):
-    
+def get_strategy_rm(rm, strategy_set, full_removal = True):
     strategic_rm = remove_rm_transitions(rm, strategy_set)
-    remove_unreachable_states(strategic_rm)
-    return strategic_rm
+    #print(strategic_rm)
+    if full_removal:
+        remove_dead_transitions(strategic_rm) #added this, maybe remove? 
+        remove_unreachable_states(strategic_rm)
 
+    return strategic_rm
 
 def get_accident_avoidance_rm(individual_rm, accident_set):
     dead_state = -1
@@ -757,3 +808,136 @@ def get_accident_avoidance_rm(individual_rm, accident_set):
     acc_rm.delta_r = delta_r
 
     return acc_rm
+
+def get_accident_avoidance_rm_less(individual_rm, accident_set, rm):
+    print("Its about to get crazy buckle up. ")
+    dead_state = -1
+    dead_reward = -1
+    acc_rm_u = individual_rm.U.copy()
+    acc_rm_e = individual_rm.events.copy()
+    acc_rm_T = individual_rm.T.copy()
+    acc_rm_u0 = individual_rm.u0
+    acc_rm_equivalence_class_name_dict = individual_rm.equivalence_class_name_dict.copy()
+
+    delta_u = {}
+    delta_r = {}
+    for u, td in individual_rm.delta_u.items():
+        delta_u[u] = td.copy()
+    for u, rd in individual_rm.delta_r.items():
+        delta_r[u] = rd.copy()
+
+
+    # look at each state in the individual RM. 
+    # for each e in accident: see if it exists for one of the corresponding states in the original reward machine. 
+    for u1 in acc_rm_u:
+        original_equivalent_states = individual_rm.equivalence_class_name_dict[u1]
+        for v in original_equivalent_states:
+            if v in rm.delta_u.keys():
+                original_possible_transitions = rm.delta_u[v].keys()
+                for e in accident_set:
+                    if e in original_possible_transitions:
+                        acc_rm_e.add(e)
+                        if u1 in delta_u.keys():
+                            td = delta_u[u1]
+                        else:
+                            td = {}
+                            
+                        if u1 in delta_r.keys():
+                            rd = delta_r[u1]
+                        else:
+                            rd = {}
+                        td[e] = dead_state
+                        rd[dead_state] = dead_reward
+                        delta_u[u1] = td
+                        delta_r[u1] = rd
+                
+    
+    acc_rm_u.append(dead_state)
+    acc_rm_T.add(dead_state)
+
+    acc_rm = SparseRewardMachine()
+    acc_rm.U = acc_rm_u
+    acc_rm.events = acc_rm_e
+    acc_rm.T = acc_rm_T
+    acc_rm.u0 = acc_rm_u0
+    acc_rm.delta_u = delta_u
+    acc_rm.delta_r = delta_r
+    acc_rm.equivalence_class_name_dict = acc_rm_equivalence_class_name_dict
+    
+    return acc_rm
+
+
+def get_accident_avoidance_rm_less_2(individual_rm, accident_set, rm):
+    print("Its about to get crazy buckle up. ")
+    dead_state = -1
+    dead_reward = -1
+    acc_rm_u = individual_rm.U.copy()
+    acc_rm_e = individual_rm.events.copy()
+    acc_rm_T = individual_rm.T.copy()
+    acc_rm_u0 = individual_rm.u0
+    acc_rm_equivalence_class_name_dict = individual_rm.equivalence_class_name_dict.copy()
+
+    delta_u = {}
+    delta_r = {}
+    for u, td in individual_rm.delta_u.items():
+        delta_u[u] = td.copy()
+    for u, rd in individual_rm.delta_r.items():
+        delta_r[u] = rd.copy()
+
+    # look at each state in the individual RM. 
+    # for each e in accident: see if it exists for one of the corresponding states in the original reward machine. 
+    
+    for u1 in acc_rm_u:
+        original_equivalent_states = individual_rm.equivalence_class_name_dict[u1]
+        for v in original_equivalent_states:
+            if v in rm.delta_u.keys():
+                original_possible_transitions = rm.delta_u[v].keys()
+                
+                for e in rm.events:
+                    if e in accident_set:
+                        if e in original_possible_transitions:
+                            acc_rm_e.add(e)
+                            if u1 in delta_u.keys():
+                                td = delta_u[u1]
+                            else:
+                                td = {}
+                                
+                            if u1 in delta_r.keys():
+                                rd = delta_r[u1]
+                            else:
+                                rd = {}
+                            td[e] = dead_state
+                            rd[dead_state] = dead_reward
+                            delta_u[u1] = td
+                            delta_r[u1] = rd
+
+                    elif v in individual_rm.dead_transitions.keys():
+                        dead_transitions_from_v = individual_rm.dead_transitions[v] # these are transitions I removed that are in my strategy set
+                        if e in dead_transitions_from_v.keys():
+                            if u1 in delta_u.keys():
+                                td = delta_u[u1]
+                            else:
+                                td = {}
+                            if u1 in delta_r.keys():
+                                rd = delta_r[u1]
+                            else:
+                                rd = {}
+                            td[e] = dead_state
+                            rd[dead_state] = dead_reward
+                            delta_u[u1] = td
+                            delta_r[u1] = rd
+    
+    acc_rm_u.append(dead_state)
+    acc_rm_T.add(dead_state)
+
+    acc_rm = SparseRewardMachine()
+    acc_rm.U = acc_rm_u
+    acc_rm.events = acc_rm_e
+    acc_rm.T = acc_rm_T
+    acc_rm.u0 = acc_rm_u0
+    acc_rm.delta_u = delta_u
+    acc_rm.delta_r = delta_r
+    acc_rm.equivalence_class_name_dict = acc_rm_equivalence_class_name_dict
+    
+    return acc_rm
+    

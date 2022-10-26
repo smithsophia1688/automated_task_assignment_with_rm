@@ -8,7 +8,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/run_crafting_experiment_trivial.py",
+            "program": "${workspaceFolder}/run_line_of_buttons_full.py",
             "cwd" : "${workspaceFolder}",
             "console": "integratedTerminal",
             "justMyCode": false
