@@ -1,0 +1,41 @@
+[1,0,0]
+Group shared events are:         {'timber'}.
+ Individual shared events are:    {2: ['timber'], 1: ['timber'], 0: []}.
+ Accident events are:            {'tr1', 'a1', 'l3', 'tr2', 'l2'}.
+ Task Assignment is:             {2: ['timber', 'a3', 'craft', 'ar', 'tr3'], 1: ['a2', 'timber'], 0: ['l1']}.
+The best viable knapsack(s) have size 0.7777777777777778 and there are 9 successful ways to do it.
+ 0:{2: ['timber', 'a3', 'craft', 'ar', 'tr3'], 1: ['a2', 'timber'], 0: ['l1']} with labor division 5 vs. 2 vs. 1 
+1:{2: ['timber', 'craft', 'a3', 'ar', 'tr3'], 0: ['ar'], 1: ['a2', 'timber']} with labor division 5 vs. 1 vs. 2 
+2:{0: ['timber', 'a1'], 2: ['timber', 'craft', 'a3', 'ar', 'tr3'], 1: ['l2']} with labor division 2 vs. 5 vs. 1 
+3:{0: ['timber', 'a1'], 2: ['timber', 'craft', 'a3', 'ar', 'tr3'], 1: ['timber']} with labor division 2 vs. 5 vs. 1 
+4:{0: ['timber', 'a1'], 2: ['timber', 'craft', 'ar', 'tr3'], 1: ['a2', 'timber']} with labor division 2 vs. 4 vs. 2 
+5:{0: ['timber'], 2: ['timber', 'craft', 'a3', 'ar', 'tr3'], 1: ['a2', 'timber']} with labor division 1 vs. 5 vs. 2 
+6:{0: ['timber', 'a1'], 1: ['ar'], 2: ['timber', 'craft', 'a3', 'ar', 'tr3']} with labor division 2 vs. 1 vs. 5 
+7:{0: ['timber', 'a1'], 1: ['ar', 'a2', 'timber', 'tr2'], 2: ['craft', 'ar']} with labor division 2 vs. 4 vs. 2 
+8:{0: ['tr1', 'timber', 'a1', 'ar'], 1: ['a2', 'timber'], 2: ['craft', 'ar']} with labor division 4 vs. 2 vs. 2 
+
+
+ [0,1,0] 
+ Group shared events are:         {'timber', 'ar'}.
+ Individual shared events are:    {2: ['timber', 'ar'], 1: ['timber', 'ar'], 0: ['timber', 'ar']}.
+ Accident events are:            {'tr3', 'tr1', 'a2', 'l3'}.
+ Task Assignment is:             {2: ['ar', 'a3', 'timber', 'craft'], 1: ['l2', 'ar', 'tr2', 'timber'], 0: ['timber', 'l1', 'a1', 'ar']}.
+ Kept Event Sets: 
+0:{2: ['ar', 'a3', 'timber', 'craft'], 1: ['l2', 'ar', 'tr2', 'timber'], 0: ['timber', 'l1', 'a1', 'ar']} with labor division 4 vs. 4 vs. 4 
+1:{2: ['ar', 'a3', 'timber', 'craft'], 1: ['a2', 'ar', 'l2', 'timber'], 0: ['tr1', 'timber', 'l1', 'ar']} with labor division 4 vs. 4 vs. 4 
+2:{2: ['ar', 'l3', 'timber', 'craft'], 1: ['a2', 'ar', 'l2', 'timber'], 0: ['tr1', 'timber', 'a1', 'ar']} with labor division 4 vs. 4 vs. 4 
+3:{2: ['ar', 'l3', 'timber', 'craft'], 1: ['a2', 'ar', 'tr2', 'timber'], 0: ['timber', 'l1', 'a1', 'ar']} with labor division 4 vs. 4 vs. 4 
+**4:{2: ['ar', 'tr3', 'timber', 'craft'], 1: ['a2', 'ar', 'l2', 'timber'], 0: ['timber', 'l1', 'a1', 'ar']} with labor division 4 vs. 4 vs. 4 
+
+The best viable knapsack(s) have size 1.0 and there are 5 successful ways to do it.
+
+ [1,1,0]
+  Group shared events are:         {'ar', 'timber'}.
+ Individual shared events are:    {0: ['ar', 'timber'], 2: ['ar', 'timber'], 1: ['ar', 'timber']}.
+ Accident events are:            {'l3', 'tr1', 'tr3', 'a2'}.
+ Task Assignment is:             {0: ['ar', 'l1', 'timber', 'a1'], 2: ['craft', 'timber', 'ar', 'a3'], 1: ['l2', 'ar', 'tr2', 'timber']}.
+ 0:{0: ['ar', 'l1', 'timber', 'a1'], 2: ['craft', 'timber', 'ar', 'a3'], 1: ['l2', 'ar', 'tr2', 'timber']} with labor division 4 vs. 4 vs. 4 
+1:{1: ['a2', 'tr2', 'timber', 'ar'], 0: ['ar', 'l1', 'timber', 'a1'], 2: ['craft', 'timber', 'l3', 'ar']} with labor division 4 vs. 4 vs. 4 
+2:{1: ['a2', 'l2', 'timber', 'ar'], 0: ['ar', 'l1', 'timber', 'a1'], 2: ['craft', 'timber', 'ar', 'tr3']} with labor division 4 vs. 4 vs. 4 
+3:{1: ['a2', 'l2', 'timber', 'ar'], 0: ['ar', 'tr1', 'l1', 'timber'], 2: ['craft', 'timber', 'a3', 'ar']} with labor division 4 vs. 4 vs. 4 
+4:{1: ['a2', 'l2', 'timber', 'ar'], 0: ['ar', 'tr1', 'timber', 'a1'], 2: ['craft', 'timber', 'l3', 'ar']} with labor division 4 vs. 4 vs. 4 
