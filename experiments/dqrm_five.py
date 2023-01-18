@@ -9,6 +9,8 @@ from Environments.rendezvous.gridworld_env import GridWorldEnv
 from Environments.rendezvous.multi_agent_gridworld_env import MultiAgentGridWorldEnv
 from Environments.crafting.multiagent_crafting_env import MultiAgentCraftingEnv
 from Environments.crafting.crafting_env import CraftingEnv
+from Environments.five_agents.five_agents_env import FiveAgentEnv
+from Environments.five_agents.multiagent_five_agents_env import MultiAgentFiveAgentEnv
 import matplotlib.pyplot as plt
 
 def run_qlearning_task(epsilon,
@@ -43,17 +45,17 @@ def run_qlearning_task(epsilon,
         agent_list[i].initialize_reward_machine()
 
     num_steps = learning_params.max_timesteps_per_task
-    traject = {0:[], 1:[], 2:[]}
+    traject = {0:[], 1:[], 2:[], 3:[], 4:[]}
     
     # Load the appropriate environments for training
-    if tester.experiment == 'crafting':
+    if tester.experiment == 'five_agents':
         training_environments = []
         for i in range(num_agents): 
-            training_environments.append(CraftingEnv(agent_list[i].rm_file, i, tester.env_settings, tester.shared_events_dict[i], tester.agent_event_spaces_dict[i])) 
+            training_environments.append(FiveAgentEnv(agent_list[i].rm_file, i, tester.env_settings, tester.shared_events_dict[i], tester.agent_event_spaces_dict[i])) 
     if 'individual_trajectory' not in tester.results.keys():
         tester.results['individual_trajectory'] = {}
         
-    full_trajectory = {0:{'s':[], 'l':[], 'acc': False,  'done': False, 'timber_step_time' : -1}, 1:{'s':[], 'l':[], 'acc': False, 'done': False, 'timber_step_time' : -1}, 2:{'s':[], 'l':[], 'acc': False,  'done': False, 'timber_step_time' : -1}} 
+    full_trajectory = {4:{'s':[], 'l':[], 'acc': False}, 3:{'s':[], 'l':[], 'acc': False},0:{'s':[], 'l':[], 'acc': False,  'done': False, 'timber_step_time' : -1}, 1:{'s':[], 'l':[], 'acc': False, 'done': False, 'timber_step_time' : -1}, 2:{'s':[], 'l':[], 'acc': False,  'done': False, 'timber_step_time' : -1}} 
     
     for t in range(num_steps): # 1000 max
         # Update step count
@@ -72,9 +74,6 @@ def run_qlearning_task(epsilon,
                 #    old_traj.append(l[0])
                 #    traject[i] = old_traj
                 full_trajectory[i]['s'].append(s_new) # collect the states for each step 
-                if len(l)>0:
-                    if 'timber' in l:
-                        full_trajectory['timber_step_time'] = len(full_trajectory[i]['s'])
                 full_trajectory[i]['l'].extend(l) 
                 if r<0:
                     full_trajectory[i]['acc'] = True
@@ -82,23 +81,6 @@ def run_qlearning_task(epsilon,
                     full_trajectory[i]['done'] = True
                 # a = training_environments[i].get_last_action() # due to MDP slip #TODO: there is slip
                 agent_list[i].update_agent(s_new, a, r, l, learning_params) 
-
-                '''
-                for u in agent_list[i].rm.U:
-                    if not (u == current_u) and not (u in agent_list[i].rm.T): # checking other, non terminal u
-                        l = training_environments[i].get_mdp_label(s, s_new, u) 
-                        r = 0
-                        u_temp = u
-                        u2 = u
-                        for e in l:
-                            # Get the new reward machine state and the reward of this step
-                            u2 = agent_list[i].rm.get_next_state(u_temp, e)
-                            r = r + agent_list[i].rm.get_reward(u_temp, u2)
-                            
-                            # Update the reward machine state
-                            u_temp = u2
-                        agent_list[i].update_q_function(s, s_new, u, u2, a, r, learning_params)
-                '''
 
         # If enough steps have elapsed, test and save the performance of the agents.
         if testing_params.test and tester.get_current_step() % testing_params.test_freq == 0:
@@ -124,7 +106,7 @@ def run_qlearning_task(epsilon,
                 agent_list_copy.append(agent_copy)
 
             # Run a test of the performance of the agents
-            testing_reward, trajectory, testing_steps = run_multi_agent_qlearning_test(agent_list_copy,
+            testing_reward, trajectory, testing_steps, testing_discounted_reward = run_multi_agent_qlearning_test(agent_list_copy,
                                                                                         tester,
                                                                                         learning_params,
                                                                                         testing_params,
@@ -133,9 +115,15 @@ def run_qlearning_task(epsilon,
             # Save the testing reward
             if 'reward' not in tester.results.keys():
                 tester.results['reward'] = {}
+            if 'discounted_reward' not in tester.results.keys():
+                tester.results['discounted_reward'] = {}
             if step not in tester.results['reward']:
                 tester.results['reward'][step] = []
+            
+            if step not in tester.results['discounted_reward']:
+                tester.results['discounted_reward'][step] = []
             tester.results['reward'][step].append(testing_reward)
+            tester.results['discounted_reward'][step].append(testing_discounted_reward)
             
             tester.results['individual_trajectory'][step] = full_trajectory 
             # Save the testing trace
@@ -178,7 +166,7 @@ def run_multi_agent_qlearning_test(agent_list,
                                     tester,
                                     learning_params,
                                     testing_params,
-                                    show_print=True):
+                                    show_print = True):
     """
     Run a test of the q-learning with reward machine method with the current q-function. 
 
@@ -208,7 +196,9 @@ def run_multi_agent_qlearning_test(agent_list,
         testing_env = MultiAgentButtonsEnv(tester.rm_test_file, num_agents, tester.env_settings)
     if tester.experiment == 'crafting':
         testing_env = MultiAgentCraftingEnv(tester.rm_test_file, num_agents, tester.env_settings)
-
+    if tester.experiment == 'five_agents':
+        testing_env = MultiAgentFiveAgentEnv(tester.rm_test_file, num_agents, tester.env_settings)
+    
     for i in range(num_agents):
         agent_list[i].reset_state()
         agent_list[i].initialize_reward_machine()
@@ -241,7 +231,6 @@ def run_multi_agent_qlearning_test(agent_list,
             u_team[i] = agent_list[i].u
 
         #trajectory.append({'s' : np.array(s_team, dtype=int), 'a' : np.array(a_team, dtype=int), 'u_team': np.array(u_team, dtype=int), 'u': int(testing_env.u)})
-        
 
         r, l, s_team_next = testing_env.environment_step(s_team, a_team)
 
@@ -262,7 +251,7 @@ def run_multi_agent_qlearning_test(agent_list,
 
             projected_l_dict[i] = list(set(agent_list[i].local_event_set) & set(l))  # "&" is intersection in this case. local_event_set SHOULD NOT include events that are soley assinged to other agents, but it does include accidents. Agent sees "mistakes" that someone makes and their actions
             if len(projected_l_dict[i]) > 1: # this could happen when two people do accidents at the same time. 
-                print("there are at least two evens: ", projected_l_dict[i], " It may be that all (or all but one) are accidents. ")
+                print("there are at least two events: ", projected_l_dict[i], " It may be that all (or all but one) are accidents. ")
                 projected_l_dict[i] = projected_l_dict[i][:1]
                 
                 acc_labels_observed_list = []
@@ -270,7 +259,8 @@ def run_multi_agent_qlearning_test(agent_list,
                     if x not in agent_list[i].individual_events:
                         # Then x is an accident 
                         acc_labels_observed_list.append(x)
-
+                    else:
+                        raise ValueError(f" I dont think I can ever get here with how accident labels observed is made. ")
 
                 if len(projected_l_dict[i]) - len(acc_labels_observed_list) > 1: 
                     raise ValueError(f"There were multiple( {len(projected_l_dict[i]) - len(acc_labels_observed_list)} ) non- accident events that occured.  agent {i}")
@@ -310,7 +300,7 @@ def run_multi_agent_qlearning_test(agent_list,
     
     if show_print:
         if testing_reward > 0:
-            print('Reward of {} achieved in {} steps. Current step: {} of {} with Agent {} carrying the log'.format(testing_reward, step, tester.current_step, tester.total_steps, testing_env.carrying_agent + 1))
+            print('Reward of {} achieved in {} steps. Current step: {} of {}. '.format(testing_reward, step, tester.current_step, tester.total_steps))
         else: 
             print('Reward of {} achieved in {} steps. Current step: {} of {}'.format(testing_reward, step, tester.current_step, tester.total_steps))
 
@@ -319,8 +309,11 @@ def run_multi_agent_qlearning_test(agent_list,
         #   print("     The team won by accident.    ")
         #if (testing_reward > 0):
         #    print(f"     The team got  a reward of {testing_reward} in {step}  steps. Agent {testing_env.carrying_agent + 1} was transporting the log. ")
-
-    return testing_reward, trajectory, step
+    discounted_reward = (learning_params.gamma ** (step))* testing_reward
+    if testing_reward < 0: 
+        step = tester.step_unit
+    
+    return testing_reward, trajectory, step, discounted_reward
 
 def run_multi_agent_experiment(tester,
                             num_agents,
@@ -366,6 +359,9 @@ def run_multi_agent_experiment(tester,
         if tester.experiment == 'crafting':
             testing_env = MultiAgentCraftingEnv(tester.rm_test_file, num_agents, tester.env_settings) # In decentralized learning, need to include extra things
             num_states = testing_env.num_states
+        if tester.experiment == 'five_agents':
+            testing_env = MultiAgentFiveAgentEnv(tester.rm_test_file, num_agents, tester.env_settings) # In decentralized learning, need to include extra things
+            num_states = testing_env.num_states
 
         tester.individual_training_trace = {}
 
@@ -408,7 +404,7 @@ def run_multi_agent_experiment(tester,
     #print(len(l_history_0))
     #print(l_history_0)
     
-    #plot_multi_agent_results(tester, num_agents)
+    plot_multi_agent_results(tester, num_agents)
 
 def plot_multi_agent_results(tester, num_agents):
     """

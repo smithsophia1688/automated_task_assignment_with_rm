@@ -20,9 +20,9 @@ agent_id = 0
 print(rm)
 
 ### INDIVIDUAL EVENT SPACES ###
-es1= ['a1', 'l1', 'timber', 'ar']
-es2 = [ 'timber','tr2', 'ar']
-es3 = [ 'l3', 'timber', 'a3', 'ar', 'craft']
+es1= [ 'timber', 'ar',  'tr1', 'l1', 'a1']
+es2 = [ 'timber',  'a2', 'l2', 'tr2', 'ar']
+es3 = [ 'l3', 'timber', 'a3',  'ar', 'craft', 'tr3']
 
 
 agent_event_space = {0: es1, 1: es2, 2: es3}
@@ -63,8 +63,11 @@ print(f'agent event dicts are ', agent_event_space)
 
 ### make accident reward machine ### 
 strategic_rm = bs.get_strategy_rm(rm, strategy_set)
+#x = 'pause'
+print("STRATEGIC RM")
+print(strategic_rm)
 p = bs.project_rm(set(agent_event_space[agent_id]), strategic_rm)
-aap = bs.get_accident_avoidance_rm(p, acc_set)
+aap = bs.get_accident_avoidance_rm_less_2(p, acc_set, rm)
 
 print(aap)
 

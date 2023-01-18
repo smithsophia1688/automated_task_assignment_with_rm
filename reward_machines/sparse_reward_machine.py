@@ -9,7 +9,7 @@ class SparseRewardMachine:
         self.delta_r = {} # reward-transition function
         self.T = set()    # set of terminal states (they are automatically detected)
         self.equivalence_class_name_dict = {} # dict {name: equivalence class} Used in projections only 
-
+        self.dead_transitions = None
         if file is not None:
             #print('loading file')
             #cwd = os.getcwd()  # Get the current working directory (cwd)
@@ -23,7 +23,7 @@ class SparseRewardMachine:
         for trans_init_state in self.delta_u:
             for event in self.delta_u[trans_init_state]:
                 trans_end_state = self.delta_u[trans_init_state][event]
-                s += '({} ---({},{})--->{})\n'.format(trans_init_state,
+                s += '({} ---({},{})---> {})\n'.format(trans_init_state,
                                                         event,
                                                         self.delta_r[trans_init_state][trans_end_state],
                                                         trans_end_state)
@@ -95,8 +95,8 @@ class SparseRewardMachine:
         file = file_location + file_name
 
         #print("FILE IS ", file)
+        print('Get current working directory : ', os.getcwd())
         
-        #print('Get current working directory : ', os.getcwd())
         with open(file, 'w+') as f:
             s = str(self.u0) + '  # Initial state \n'
             f.write(s)
@@ -157,7 +157,7 @@ class SparseRewardMachine:
         # Check if reward is given for reaching the state in question
         for u0 in self.delta_r:
             if u1 in self.delta_r[u0]:
-                if self.delta_r[u0][u1] != 0: # Small change: had been == 1. 
+                if self.delta_r[u0][u1] == 1: # Small change: had been == 1. 
                     return True
         return False
             
@@ -167,6 +167,22 @@ class SparseRewardMachine:
                 self.U.append(u)
 
     def _add_transition(self, u1, u2, event, reward):
+        # Adding machine state
+        self._add_state([u1,u2])
+        # Adding state-transition to delta_u
+        if u1 not in self.delta_u:
+            self.delta_u[u1] = {}
+        if event not in self.delta_u[u1]:
+            self.delta_u[u1][event] = u2
+        else:
+            raise Exception('Trying to make rm transition function non-deterministic.')
+            # self.delta_u[u1][u2].append(event)
+        # Adding reward-transition to delta_r
+        if u1 not in self.delta_r:
+            self.delta_r[u1] = {}
+        self.delta_r[u1][u2] = reward
+
+    def add_transition_open(self, u1, u2, event, reward):
         # Adding machine state
         self._add_state([u1,u2])
         # Adding state-transition to delta_u

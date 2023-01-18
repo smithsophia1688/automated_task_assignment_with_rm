@@ -44,3 +44,29 @@ class Tester:
 
     def stop_task(self, step):
         return self.min_steps <= step
+
+    def process_results(self):
+        '''
+        returns dictionaries: 
+        full_l_dict = { trial number: {rep number:[l trace] } } 
+        similar for s 
+        ''' 
+        full_s_dict = {}
+        full_l_dict = {}
+        for i in range(self.num_times):
+            s_dict = {}
+            l_dict = {}
+            for step in self.results['trajectories'].keys():
+                trajectory_list = self.results['trajectories'][step][i] # this just grabs data from the first experiment
+                s_history = []
+                l_history = []
+                for tup_dict in trajectory_list:
+                    s_history.append(tup_dict['s'])
+                    l_history.extend(tup_dict['l'])
+                rep_name = int(step / 1000)
+                s_dict[rep_name] = s_history
+                l_dict[rep_name] = l_history
+            full_s_dict[i] = s_dict
+            full_l_dict[i] = l_dict
+        return full_s_dict, full_l_dict
+            

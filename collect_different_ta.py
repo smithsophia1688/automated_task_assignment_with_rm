@@ -24,38 +24,43 @@ start_time = time.time()
 
 experiment_name = 'crafting'
 num_agents = 3
-weights = [1, .5, 0]
+weights = [0, 1, 0]
 
 random = False
 trivial = False
 best = True
 centralized = False
-decomposition_types = [random, trivial, best, centralized]
 
 rm =  sparse.SparseRewardMachine(file = 'data/saved_reward_machines/crafting_task/crafting_rm_full_no_cut.txt') # I would really like this to work haha
 
-forbidden_agent_event_dict = {0: ['a2', 'l2', 'a3', 'l3', 'craft', 'tr2', 'tr3'], 1:['a1', 'l1', 'a3', 'l3', 'craft', 'tr1', 'tr3'], 2:['a1', 'l1', 'a2', 'l2', 'tr1', 'tr2']} 
-#enforced_agent_event_dict = {0: ['a1', 'l1', 'timber'], 1:['a2', 'l2', 'timber', 'tr2', 'ar'], 2: ['ar', 'craft']}
-enforced_agent_event_dict = {0:[], 1:[], 2:[]}
-
+forbidden_agent_event_dict = {0:['a2', 'l2', 'a3', 'l3', 'craft', 'tr2', 'tr3'], 1:['a1', 'l1', 'a3', 'l3', 'craft', 'tr1', 'tr3'], 2:['a1', 'l1', 'a2', 'l2', 'tr1', 'tr2']} 
+#enforced_agent_event_dict = {0: ['timber'], 1:['a2', 'l2', 'timber', 'ar'], 2: ['ar', 'craft']}
+enforced_agent_event_dict = {0:{}, 1:{}, 2:{}}
+include_all = True
 incompatible_pairs = []
-configs = Configurations(num_agents, rm, enforced_set = enforced_agent_event_dict, forbidden_set = forbidden_agent_event_dict, weights = weights, incompatible_pairs= incompatible_pairs)
+
+configs = Configurations(num_agents, rm, enforced_set = enforced_agent_event_dict, forbidden_set = forbidden_agent_event_dict, weights = weights, incompatible_pairs= incompatible_pairs, include_all = include_all)
 
 
 #+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
 ######################################       TASK ASSIGNMENT        #######################################
 #+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
 
-trivial_knapsack = configs.forbidden_set 
-# This is not technically decomposible but the most "trivial" task assingment case. Have all agents try to do everything. 
-# I think it is kind of interesting. I have a feeling if agent 3 gets to stuff first, it wins fast. otherwise it fails or wins by wandering? 
 
+root = Node(name = 'root', future_events = configs.future_events, all_events= configs.all_events, knapsack = configs.forbidden_set) #forbidden set is the starting knapsack
+print("tree events", configs.future_events)
+
+bd = root.traverse_last_minute_change(configs)
+hf.print_results(configs, bd)
+knapsack = bd[1][0] # arbitrary pick 
+
+print("--- %s seconds ---" % (time.time() - start_time))
 
 #+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
 ######################################   PRE-LEARNING PROCESSING    #######################################
 #+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
 
-es_list , agent_event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, trivial_knapsack)
+es_list , agent_event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, knapsack)
 
 strategy_set = set()
 for es in es_list:
@@ -63,6 +68,7 @@ for es in es_list:
 
 acc_set = rm.events.copy() - strategy_set # Think (?) should this not actually be rm.events - each individual event set? (Update, it does matter don't do this)
 strategic_rm = bs.get_strategy_rm(rm, strategy_set)
+
 
 shared_events = set()
 for e in strategy_set:
@@ -96,7 +102,7 @@ p3 = bs.project_rm(set(agent_event_spaces_dict[2]), strategic_rm)
 
 pms = [p1, p2, p3]
 pm_par = bs.put_many_in_parallel(pms)
-print(pm_par)
+#print(pm_par)
 
 
 print(bs.is_bisimilar(strategic_rm, pm_par))
@@ -116,41 +122,7 @@ file_name_list = []
 for a in range(num_agents):
 
     aap = aap_dict[a]
-    rm_file_name = experiment_time + '_trivial_' + str(a) + '.txt'
+    rm_file_name = experiment_time + '_best_for_comparison_' + str(a) + '.txt'
     file_name_list.append(rm_file_name)
     aap.write_rm_file(new_rm_file_location, rm_file_name)
-
-
-#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
-######################################        LEARNING SET UP       #######################################
-#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
-
-# need to get learning moving still
-
-print("Now Past Task Assignment " )
-import  experiments.config.crafting_config as cc
-
-from experiments.dqprm_craft import run_multi_agent_experiment
-num_times = 100
-
-
-tester = cc.crafting_config_ta(num_times, num_agents, file_name_list, agent_event_spaces_dict, shared_events_dict) # Get test object from config script # NEED TO CORRECT WHERE I get my Local RMs 
-tester.agent_event_spaces_dict = agent_event_spaces_dict
-tester.shared_events_dict = shared_events_dict
-
-# need to add shared events and individual events dicts for each agent 
-
-
-run_multi_agent_experiment(tester, num_agents, num_times, show_print = True)
-
-def save_object(obj, filename):
-    with open(filename, 'wb') as outp:  # Overwrites any existing file.
-        pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
-
-# sample usage
-
-new_rm_file_location = 'data/saved_testers/crafting_task/'
-tester_file_name = experiment_time + '_trivial.pkl'
-full_tester_file = new_rm_file_location + tester_file_name
-save_object(tester, full_tester_file)
 

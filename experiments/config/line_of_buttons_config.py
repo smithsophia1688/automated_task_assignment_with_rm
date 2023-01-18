@@ -7,7 +7,7 @@ from tester.tester_params import TestingParameters
 from tester.learning_params import LearningParameters
 import os
 
-def crafting_config_ta(num_times, num_agents, rm_files, agent_event_spaces_dict, shared_events_dict):
+def line_of_buttons_config_ta(num_times, num_agents,  num_buttons,  rm_files, agent_event_spaces_dict, shared_events_dict):
     """
     Function setting the experiment parameters and environment.
 
@@ -46,12 +46,12 @@ def crafting_config_ta(num_times, num_agents, rm_files, agent_event_spaces_dict,
 
     tester = Tester(learning_params, testing_params)
     tester.step_unit = step_unit
-    tester.total_steps = 250 * step_unit # 100 * step_unit $ (WAS 250)
+    tester.total_steps = 250 * step_unit # 100 * step_unit
     tester.min_steps = 1
 
     tester.num_times = num_times
     tester.num_agents = num_agents
-
+    
     tester.rm_test_file = joint_rm_file
     tester.rm_learning_file_list = local_rm_files
     tester.agent_event_spaces_dict = agent_event_spaces_dict
@@ -61,18 +61,21 @@ def crafting_config_ta(num_times, num_agents, rm_files, agent_event_spaces_dict,
     env_settings = dict()
     env_settings['Nr'] = 10
     env_settings['Nc'] = 10
-    env_settings['initial_states'] = [20, 81, 99]
-    env_settings['walls'] = [(0, 7), (1, 7), (2, 7), (3,7), (4,7), (5,7), (8,7), (9,7)]
-    env_settings['craft_table'] = (1,9)
-    env_settings['tree_loc'] = (0, 3)
-    env_settings['log_loc'] = (0, 4)
-    env_settings['thresh'] = .1
-    env_settings['end_thresh'] = .1
+    env_settings['initial_states'] = [0, 0, 0, 0, 0, 87, 87, 87, 87, 87] 
+    env_settings['walls'] =[(0,2), (1,2), (2,2), (2,3), (2,4),
+     (5,1), (5,2), (5,3), (6,3), (7,3), (8,3), (9,3), (9,2), (9,1), (9,0) (11,0), (0,6), (1,6), (2,6), (3,6), (4,6), (5,6), (5,5), (5,7), (5,8), (5,9), (5,10), 
+     (6,7), (7,7), (8,7), (9,7), (10,7), (11,7), (11,6), (11,8), (12,8), (13,8), (14,8), (0,9), (1,9), (2,9), (2,10), (2,11), (2,12), (2,13), (4,13), (5,13), (6,13), (8,11), (8,12), (8,13), (8,14), (12,11), (12, 12), (12,13), (12,14)]
     
-    env_settings['p'] = 0.98
+    button_locs = {'b1': (0,3), 'b2': (10,14), 'b3': (13,6), 'b4': (1,12), 'b5': (7,0), 'b6': (2,7), 'b7': (11,1), 'b8': (8,8), 'b9':(14,12), 'b10':(4,2)}
+    env_settings['num_buttons'] = num_buttons # only builds this many buttons in the environment. 
+    env_settings['button_locs'] = button_locs
+
+    env_settings['thresh'] = .3
+    env_settings['end_thresh'] = .3
+    env_settings['p'] = 0.99
 
     tester.env_settings = env_settings
 
-    tester.experiment = 'crafting'
+    tester.experiment = 'line_of_buttons'
 
     return tester

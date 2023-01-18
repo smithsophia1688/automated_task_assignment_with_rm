@@ -1,0 +1,18 @@
+Kept Event Sets: 
+0:{3: ['b1_on', 'b2_on', '4b2'], 0: ['b3_on', 'b2_on', '1b3'], 2: ['b1_on', 'b3_on', 'b2_on'], 1: ['b1_on', '2b1', 'b3_on']} with labor division 3 vs. 3 vs. 3 vs. 3 
+
+There are 24 possible knapsack items. 
+There are 16777216 possible ways to fill a knapsack with these items. 
+The best viable knapsack(s) have size 1.3888888888888888 and there are 1 successful ways to do it.
+
+ --- 21582.602703809738 seconds ---
+ Which TA do you want? 0
+ Group shared events are:         {'b2_on', 'b3_on', 'b1_on'}.
+ Individual shared events are:    {3: ['b2_on', 'b1_on'], 0: ['b2_on', 'b3_on'], 2: ['b2_on', 'b1_on', 'b3_on'], 1: ['b1_on', 'b3_on']}.
+ Accident events are:            {'4b1', '2b3', '2l2', '4l3', '1l3', '3b2', '1b2', '2b2', '3l2', '3l1', '1l2', '4l1', '1b1', '3l3', '3b1', '4b3', '4l2', '3b3', '2l1', '2l3', '1l1'}.
+ Task Assignment is:             {3: ['b1_on', 'b2_on', '4b2'], 0: ['b3_on', 'b2_on', '1b3'], 2: ['b1_on', 'b3_on', 'b2_on'], 1: ['b1_on', '2b1', 'b3_on']}.
+Bisimilarity check:  False
+Traceback (most recent call last):
+  File "/Users/sophia/Documents/Research/automated_task_assignment_with_rm/run_line_of_buttons_full.py", line 190, in <module>
+    aapi = bs.get_accident_avoidance_rm_less(p[i], acc_set, rm) 
+TypeError: 'SparseRewardMachine' object is not subscriptable

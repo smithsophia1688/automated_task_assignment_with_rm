@@ -1,4 +1,6 @@
+import pstats
 import random, math, os
+from xml.dom.expatbuilder import parseString
 import numpy as np
 from enum import Enum
 
@@ -117,18 +119,50 @@ class CraftingEnv:
         s_next, last_action = self.get_next_state(s,a) 
         self.last_action = last_action 
 
-        l = self.get_mdp_label(s, s_next, self.u) # I think I have this correct... (yikes)
+        row, col = self.get_state_description(s_next)
+        if self.flags['carrying'] == True:
+            self.env_settings['log_loc'] = (row, col)
+
+        l = self.get_mdp_label_update_fix(s, s_next, self.u) # I think I have this correct... (yikes)
         r = 0
+        tri = self.agent_events_dict[self.agent_id]['tri']
+        end_thresh = self.env_settings['end_thresh']
 
         for e in l:
             # Get the new reward machine state and the reward of this step
             u2 = self.reward_machine.get_next_state(self.u, e) #check what this does for undefined events. TODO: 
+            if u2 in self.reward_machine.T:
+                if self.random_success(end_thresh):
+                     self.flags['crafted'] = True
+                     #print("might randomly end episode")
+                     #print("You thought you were done so I let you wander for a bit then ended it. ")
             r_step = self.reward_machine.get_reward(self.u, u2) # I should be quitting here if reward is negative.
             if r_step < 0: 
                 self.flags['failed'] = True
             r = r +  r_step
             # Update the reward machine state
             self.u = u2 # okay cool I get this code 
+            #print(f" e is {e} and tri is {tri}")
+            if e == tri:
+                #print("WHY AM I NOT HERE")
+                self.env_settings['log_loc'] = (row, col)
+                self.flags['carrying'] = True
+            if e == 'ar':
+                self.flags['carrying'] = False
+                self.flags['arrived'] = True
+                self.flags['log'] = False
+            if e == 'timber':
+                self.flags['tree'] = False
+                self.flags['log'] = True
+            if e == 'craft':
+                self.flags['crafted'] = True
+
+        if l == []:
+            if self.u in self.reward_machine.T:
+                # probably never get here
+                #print("might randomly end episode")
+                if self.random_success(end_thresh):
+                     self.flags['crafted'] = True
 
         return r, l, s_next
 
@@ -383,6 +417,149 @@ class CraftingEnv:
 
         return l 
    
+    def random_success(self, thresh):
+        if np.random.random() <= thresh:
+            return True
+        return False
+
+    def get_mdp_label_update(self, s, s_next, u):
+        # this cannot be a function of the name of the reward machine. It needs to be based off of tranistions
+        possible_transitions = self.reward_machine.delta_u[u].keys()
+        print(f"The transitions I can take are: {possible_transitions} .")
+        
+        ai = self.agent_events_dict[self.agent_id]['ai']
+        li = self.agent_events_dict[self.agent_id]['li']
+        tri = self.agent_events_dict[self.agent_id]['tri']
+        #print(f'ai is {ai}, li is {li}, tri is {tri}. ')
+        thresh = .3
+        l = []
+        row, col = self.get_state_description(s_next)
+
+        for e in possible_transitions: # at the mercy of what order e gets pulled (bad)
+            if e == 'timber':
+                if e in self.my_shared_events:
+                    print(f"try simulating {e}")
+                    if self.random_success(thresh):
+                        l.append(e)
+                else:
+                    print(f"{e} is not shared I will have to do it myself")
+                    print(f"Can {e} ever exist not shared? ")
+            
+            elif e == ai:
+                if e in self.my_shared_events:
+                    print(f"try simulating {e}")
+                    if self.random_success(thresh):
+                        l.append(e)
+                else:
+                    print(f"{e} is not shared I will have to do it myself")
+                    if (row, col) == self.env_settings['tree_loc']:
+                        l.append(e)
+            
+            elif e == li:
+                if e in self.my_shared_events:
+                    print(f"try simulating {e}")
+                    if self.random_success(thresh):
+                        l.append(e)
+                else:
+                    print(f"{e} is not shared I will have to do it myself")
+                    if (row, col) != self.env_settings['tree_loc']:
+                        l.append(e)
+        
+            elif e == tri: # if this is an accident it will always be in my possible transitions. Maybe I should be looking at this all differently 
+                if e in self.my_shared_events:
+                    print(f"try simulating {e}")
+                    if self.random_success(thresh):
+                        l.append(e)
+                else:
+                    if (row, col) == self.env_settings['log_loc']:
+                        l.append(e) 
+                    print(f"{e} is not shared I will have to do it myself")
+            elif e == 'ar':
+                if e in self.my_shared_events:
+                    print(f"try simulating {e}")
+                    if self.random_success(thresh):
+                        l.append(e)
+                else:
+                    print(f"{e} is not shared I will have to do it myself")
+                    if (row, col) == self.env_settings['craft_table']:
+                        l.append(e)
+            
+            elif e == 'craft':
+                if e in self.my_shared_events:
+                    print(f"try simulating {e}")
+                    if self.random_success(thresh):
+                        l.append(e)
+                else:
+                    print(f"{e} is not shared I will have to do it myself")
+                    if (row, col) == self.env_settings['craft_table']:
+                        l.append(e)
+            #else:
+            #    print(f"that was weird, how did {self.agent_id} get {e}?")
+        
+        return l[:1] #only return the first successful event. 
+
+    def get_mdp_label_update_fix(self, s, s_next, u):
+        if u in self.reward_machine.delta_u.keys():
+            possible_transitions = self.reward_machine.delta_u[u].keys()
+        else:
+            possible_transitions = []
+        #print(f"The transitions I can take are: {possible_transitions} .")
+
+        ai = self.agent_events_dict[self.agent_id]['ai']
+        li = self.agent_events_dict[self.agent_id]['li']
+        tri = self.agent_events_dict[self.agent_id]['tri']
+
+        thresh = self.env_settings['thresh'] 
+        l = []
+        row, col = self.get_state_description(s_next)
+
+        # What order do I check:
+        # li
+        if li in possible_transitions:
+            # only happens when I have already arrived (NOT TRUE: could be an accident to leave always. ) UPDATE: now true
+            if (row, col) != self.env_settings['tree_loc']:
+                l.append(li)
+        if 'timber' in possible_transitions:
+            # only happens when the tree is ready to fall
+            if 'timber' in self.my_shared_events:
+                #print(f"try simulating 'timber'")
+                if self.random_success(thresh):
+                    l.append('timber')
+            #else:
+            #    print(" the combo of timber being possible (means its either an accident or my event) but not being shared shouldn't happen, right?")
+            #    # you could automatically add but it could mess up, someone could get stuck here? 
+        
+        
+        if ai in possible_transitions:
+            if (row, col) == self.env_settings['tree_loc']:
+                l.append(ai)
+        if 'ar' in possible_transitions:
+            if self.flags['carrying'] == False:
+                # I am not carring the log yet
+                if 'ar' in self.my_shared_events:
+                    if self.random_success(thresh):
+                        #print("Randomly arrived sucess")
+                        l.append('ar')
+            else:
+                if (row, col) == self.env_settings['craft_table']:
+                    l.append('ar')
+        if tri in possible_transitions:
+            if (row, col) == self.env_settings['log_loc']:
+                l.append(tri)
+        
+        if 'craft' in possible_transitions:
+            if (row, col) == self.env_settings['craft_table']:
+                l.append('craft')
+
+        # I want to get rid of the next few lines:
+        #if self.flags['arrived'] == True:
+        #    if 'craft' not in self.individual_events:
+        #        l.append('craft')
+
+        #print(f"full l is {l}")
+
+        return l[:1]
+     
     ######################################################
 
     def get_next_state(self, s, a):
@@ -577,6 +754,8 @@ def play(my_shared_events, individual_events, agent_id, file_name = 'crafting_rm
     env_settings['tree_loc'] = (0, 3)
     env_settings['log_loc'] = (0, 4)
 
+    env_settings['thresh'] =.5
+    env_settings['end_thresh'] = .5
     env_settings['p'] = 0.99
 
     game = CraftingEnv(rm_string, agent_id, env_settings, my_shared_events, individual_events)
@@ -586,6 +765,7 @@ def play(my_shared_events, individual_events, agent_id, file_name = 'crafting_rm
     str_to_action = {"w":Actions.up.value,"d":Actions.right.value,"s":Actions.down.value,"a":Actions.left.value,"x":Actions.none.value} # add pick up and drop? 
 
     s = game.get_initial_state()
+    full_l = []
     
     while True:
         # Showing game
@@ -599,7 +779,7 @@ def play(my_shared_events, individual_events, agent_id, file_name = 'crafting_rm
         # Executing action
         if a in str_to_action:
             r, l, s = game.environment_step(s, str_to_action[a])
-
+            full_l = full_l + l
             
             print("---------------------")
             print("Next States: ", s)
@@ -608,6 +788,7 @@ def play(my_shared_events, individual_events, agent_id, file_name = 'crafting_rm
             print("Reward: ", r)
             print("RM state: ", game.u)
             print("task flags: ", game.flags)
+            print('full trace:', full_l)
             print("---------------------")
 
             if game.flags['failed']:
