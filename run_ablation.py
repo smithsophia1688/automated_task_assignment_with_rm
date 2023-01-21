@@ -1,3 +1,7 @@
+'''
+This file will collect run learning experiements given different weights.
+Basically nothing should be different  other than the the flie name info 
+'''
 from cmath import exp
 from datetime import datetime
 import pickle
@@ -24,7 +28,7 @@ start_time = time.time()
 
 experiment_name = 'crafting'
 num_agents = 3
-weights = [1, .5, 0]
+weights = [1, 0, 0]
 
 random = False
 trivial = False
@@ -37,11 +41,17 @@ rm =  sparse.SparseRewardMachine(file = 'data/saved_reward_machines/crafting_tas
 print(rm.events)
 forbidden_agent_event_dict = {0:['a2', 'l2', 'a3', 'l3', 'craft', 'tr2', 'tr3'], 1:['a1', 'l1', 'a3', 'l3', 'craft', 'tr1', 'tr3'], 2:['a1', 'l1', 'a2', 'l2', 'tr1', 'tr2']} 
 #enforced_agent_event_dict = {0: ['a1', 'l1', 'timber'], 1:['a2', 'l2', 'timber', 'tr2', 'ar'], 2: ['ar', 'craft']}
+agent_utility_function = {0:{'timber': 0, 'tr2': 0, 'ar':0, 'a1': 3, 'craft':0, 'l3':0, 'a3':0, 'tr3':0, 'a2':0, 'l1':0, 'tr1':0, 'l2':0}, \
+    1: {'timber':0, 'tr2':0, 'ar':0, 'a1':0, 'craft':0, 'l3':0, 'a3':0, 'tr3':0, 'a2': 2, 'l1':0, 'tr1':0, 'l2':0}, \
+        2:{'timber':0, 'tr2':0, 'ar':0, 'a1':0, 'craft':0, 'l3':0, 'a3':1, 'tr3':0, 'a2':0, 'l1':0, 'tr1':0, 'l2':0}}
+
+
+
 
 enforced_agent_event_dict = {0:[], 1:[], 2:[]}
 #forbidden_agent_event_dict = {0:['craft'], 1:['craft'], 2:[]}
 incompatible_pairs = []
-configs = Configurations(num_agents, rm, enforced_set = enforced_agent_event_dict, forbidden_set = forbidden_agent_event_dict, weights = weights, incompatible_pairs= incompatible_pairs)
+configs = Configurations(num_agents, rm, enforced_set = enforced_agent_event_dict, forbidden_set = forbidden_agent_event_dict, weights = weights, incompatible_pairs= incompatible_pairs,agent_utility_function = agent_utility_function )
 
 
 #+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#+#
@@ -55,7 +65,6 @@ print(len(configs.future_events))
 print("ways: ", 2**len(configs.future_events))
 
 #bd = root.new_traverse(configs)
-
 bd = root.traverse_last_minute_change(configs)
 hf.print_results(configs, bd)
 #knapsack = bd[1][0] # arbitrary pick 
@@ -129,7 +138,6 @@ new_rm_file_location = 'data/saved_reward_machines/crafting_task/'
 
 file_name_list = []
 for a in range(num_agents):
-
     aap = aap_dict[a]
     rm_file_name = experiment_time + '_best_' + str(a) + '.txt'
     file_name_list.append(rm_file_name)
@@ -156,8 +164,6 @@ tester.shared_events_dict = shared_events_dict
 # need to add shared events and individual events dicts for each agent 
 
 
-
-
 run_multi_agent_experiment(tester, num_agents, num_times, show_print = True)
 
 
@@ -168,7 +174,7 @@ def save_object(obj, filename):
 
 
 new_rm_file_location = 'data/saved_testers/crafting_task/'
-tester_file_name = experiment_time + '_best.pkl'
+tester_file_name = experiment_time + f'_{weights[0]}_{weights[1]}_{weights[2]}.pkl'
 full_tester_file = new_rm_file_location + tester_file_name
 save_object(tester, full_tester_file)
 

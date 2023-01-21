@@ -40,7 +40,7 @@ class Configurations():
         self.rm = rm 
         self.num_agents = num_agents
         self.agents = [i for i in range(num_agents)] 
-        self.all_events = set(itertools.product(rm.events, self.agents)) #should be all events
+        self.all_events = set(itertools.product(rm.events, self.agents)) #should be all pairs: E x A
         self.include_all = include_all
         #print("rm events", rm.events)
         #print("agents", self.agents)
@@ -111,7 +111,9 @@ class Configurations():
         '''
         if self.max_knapsack_size == 0:
             return 0
-        se_score = len(knapsack) / self.max_knapsack_size #  technically this is above the max knapsack size according to our decomposition constraints
+        # I dont think it should be len(knapsack) I think that is totally wrong
+        # I think I should totally calculate it out. 
+        se_score =  ( len(knapsack) - len(self.forbidden_set) ) / self.max_knapsack_size #  technically this is above the max knapsack size according to our decomposition constraints
         #print("se score", se_score, " max ", config.max_knapsack_size )
         return se_score
 
@@ -148,19 +150,23 @@ class Configurations():
 
         return knapsack_utility_score / self.total_utility_score
 
-    def get_score(self, knapsack):
+    def get_score(self, knapsack, set_weights = None):
         '''
         combine the other three scores, weighted with weights. 
         '''
         event_spaces, event_spaces_dict = hf.get_event_spaces_from_knapsack(self.all_events, knapsack)
 
-        se  = self.get_shared_event_score(knapsack)
+        se = self.get_shared_event_score(knapsack)
         f = self.get_fairness_score(knapsack, event_spaces_dict)
         u = self.get_utility_score(knapsack)
         
-        se_weight, f_weight, u_weight = self.weights
-        score = se * se_weight + f * f_weight + u * u_weight
+        if set_weights: 
+            se_weight, f_weight, u_weight = set_weights
+        else:
+            se_weight, f_weight, u_weight = self.weights
 
+        score = se * se_weight + f * f_weight + u * u_weight
+        
         #print(f"se score is:, {se} , f score is: {f}, u score is: {u}, for a total of {score}")
         
         return score 

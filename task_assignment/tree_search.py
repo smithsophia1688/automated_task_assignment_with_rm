@@ -226,6 +226,57 @@ class Node:
             if not self.is_parent_valid: 
                 self.check_incompatible_assignments(configs, agent_event_spaces_dict) # do this check regardless of value
 
+    def run_check_last_minute_2_ablation(self, configs, condition):
+        '''
+        this is the function that is actually doing the check
+        '''
+        event_spaces, agent_event_spaces_dict = hf.get_event_spaces_from_knapsack(configs.all_events, self.knapsack)
+        self.event_spaces = event_spaces
+        self.agent_event_spaces_dict = agent_event_spaces_dict
+        if self.value == -1: # this is the root node
+            print('value is -1')
+            print(f" value is {self.value}, doomed is {self.doomed}, is valid is {self.is_valid}, and is_parent_valid is {self.is_parent_valid}")
+            # check everything (it could be root rot)
+
+            if not self.doomed:
+                if configs.include_all:
+                    print("checking sufficent agents")
+                    self.check_sufficent_agents(configs, agent_event_spaces_dict) # I would like to remove this? Doing fairness' job. 
+            
+            if not self.doomed:
+                print("checking incompatible assignments")
+                self.check_incompatible_assignments(configs, agent_event_spaces_dict) # do this check regardless of value
+            if not self.doomed:
+                print("chekcing win ability")
+                if condition != 'c1':
+                    self.check_win_ability(configs, event_spaces)
+
+            print(f" updated: value is {self.value}, doomed is {self.doomed}, is valid is {self.is_valid}, and is_parent_valid is {self.is_parent_valid}")
+            self.is_parent_valid = self.is_valid #TODO: do I need this line? 
+
+        elif self.value == 1: 
+            if self.is_parent_valid: 
+                # Do not need to check incompatible assignments since parent is already happy, meaning we removed all incompatible assignments
+                if not self.doomed:
+                    if configs.include_all:
+                        self.check_sufficent_agents( configs, agent_event_spaces_dict)
+                if not self.doomed: 
+                    if condition != 'c1':
+                        self.check_win_ability(configs, event_spaces)
+            else:
+                if not self.doomed:
+                    if configs.include_all:
+                        self.check_sufficent_agents( configs, agent_event_spaces_dict)
+                if not self.doomed:
+                    self.check_incompatible_assignments(configs, agent_event_spaces_dict) # I need to have default is_valid = True
+                if not self.doomed: 
+                    if condition != 'c1':
+                        self.check_win_ability(configs, event_spaces)
+        
+        elif self.value == 0:
+            if not self.is_parent_valid: 
+                self.check_incompatible_assignments(configs, agent_event_spaces_dict) # do this check regardless of value
+
     def small_traverse(self, configs, best_sack = (0, [])):
         '''
         Recursive function
@@ -393,7 +444,9 @@ class Node:
             ## PRINT STATEMENTS ##
             s_start = '\t |' * self.depth + "--"
             #s = s_start + str(self) + " with " + str(len(self.future_events)) + " future events"
-            s = s_start + str(len(self.future_events)) + " future events with score " + str(round(configs.get_score(self.knapsack),2)) + ' ' + str(round(bd[0],3))
+            print(" round(bd[0],3)", round(bd[0],3))
+            print("round(configs.get_score(self.knapsack), 2)", round(configs.get_score(self.knapsack), 2))
+            s = s_start + str(len(self.future_events)) + " future events with score " + str(round(configs.get_score(self.knapsack), 2)) + ' ' + str(round(bd[0],3))
             print(s)
             #######################
     def check_aa_deterministic(self, configs, strategy_set, rms_projected): 
@@ -423,6 +476,32 @@ class Node:
             return bs.is_bisimilar(rm_parallel,strategic_rm)
         else:
             return False
+
+    def check_is_bisimilar_ablation(self, configs, condition):
+        #print("I am here")
+        strategy_set = set()
+        for es in self.event_spaces:
+            strategy_set = strategy_set.union(es)
+        strategic_rm = bs.get_strategy_rm(configs.rm, strategy_set, full_removal = True)
+      
+        rms = []
+        
+        for es in self.event_spaces:
+            rm_p = bs.project_rm(es, strategic_rm)  #project each reward machine down onto the event spaces
+            rms.append(rm_p)
+
+        rm_parallel = bs.put_many_in_parallel(rms) 
+        if condition != 'c4':
+            if self.check_aa_deterministic( configs, strategy_set, rms):
+                if condition != 'c3':
+                    return bs.is_bisimilar(rm_parallel,strategic_rm)
+                else:
+                    return True
+            else:
+                return False
+        else:
+            return bs.is_bisimilar(rm_parallel,strategic_rm) 
+            
 
     def traverse_last_minute_change(self, configs, best_sack = (0, [])):
         '''
@@ -460,7 +539,87 @@ class Node:
         
         return best_sack
 
+    def traverse_collect_all_valid(self, configs, best_sack = None):
+        '''
+        this one is the one that is used
+        '''
+        if best_sack == None:
+            best_sack =  []
+        # self.generate_prints(configs, best_sack)
 
+        self.run_check_last_minute_2(configs)
+        #print(f"new stats are: value is {self.value}, is valid {self.is_valid}, is doomed is {self.doomed}.")
+        
+        if not self.doomed:
+            if self.future_events:  # Make children if I can
+                next_event_name  = self.future_events[0]
+                next_events = self.future_events[1:]
+                new_depth = self.depth + 1
+                new_knapsack = self.knapsack.union({next_event_name}) # will only be used for child_1
+
+                # Add children
+                child_1 = Node(name = next_event_name, value = 1, knapsack = new_knapsack, future_events = next_events,  depth = new_depth, is_parent_valid= self.is_valid)
+                child_0 = Node(name = next_event_name, value = 0, knapsack = self.knapsack, future_events = next_events,  depth = new_depth, is_parent_valid= self.is_valid)
+                self.add_children([child_1, child_0])
+            else:
+                if self.is_valid: 
+                    knap_score = configs.get_score(self.knapsack)
+                    #best sack = {score: [knapsacks] }
+                    # if knap_score >= best_sack[0]:  
+                    if self.check_is_bisimilar(configs):
+                        best_sack.append(self.knapsack)
+                        # if knap_score in best_sack.keys():
+                        #     old_knapsacks = best_sack[knap_score]
+                        #     print("knap_score", knap_score, "old_knapsack", old_knapsacks)
+                        #     new_knapsacks = old_knapsacks.append(self.knapsack)
+                        #     best_sack[knap_score] = new_knapsacks # this could get really long 
+                        # else:
+                        #     best_sack[knap_score] = [self.knapsack]
+
+        ### Recursion Step ###
+        for child in self.children:
+            best_sack = child.traverse_collect_all_valid(configs, best_sack = best_sack)
+        
+        return best_sack
+
+    def traverse_ablation(self, configs, best_sack = (0, []), condition = None):
+        '''
+        this one is the one that is used
+        '''
+
+        # self.generate_prints(configs, best_sack)
+
+        self.run_check_last_minute_2_ablation(configs, condition = condition)
+        #print(f"new stats are: value is {self.value}, is valid {self.is_valid}, is doomed is {self.doomed}.")
+        
+        if not self.doomed:
+            if self.future_events:  # Make children if I can
+                next_event_name  = self.future_events[0]
+                next_events = self.future_events[1:]
+                new_depth = self.depth + 1
+                new_knapsack = self.knapsack.union({next_event_name}) # will only be used for child_1
+
+                # Add children
+                child_1 = Node(name = next_event_name, value = 1, knapsack = new_knapsack, future_events = next_events,  depth = new_depth, is_parent_valid= self.is_valid)
+                child_0 = Node(name = next_event_name, value = 0, knapsack = self.knapsack, future_events = next_events,  depth = new_depth, is_parent_valid= self.is_valid)
+                self.add_children([child_1, child_0])
+            else:
+                if self.is_valid: 
+                    knap_score = configs.get_score(self.knapsack)
+    
+                    if knap_score >= best_sack[0]: #only return 1 
+                        if self.check_is_bisimilar_ablation(configs, condition = condition):
+                            if knap_score == best_sack[0]:
+                                best_sack[1].append(self.knapsack) # this could get really long 
+                            else:
+                                best_sack = (knap_score, [self.knapsack])
+                
+                        
+        ### Recursion Step ###
+        for child in self.children:
+            best_sack = child.traverse_ablation(configs, best_sack = best_sack, condition = condition)
+        
+        return best_sack
 
 
 

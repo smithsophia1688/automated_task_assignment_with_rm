@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             
-            "program": "${workspaceFolder}/collect_data_and_process_five.py",
+            "program": "${workspaceFolder}/run_decomp_ablation_five.py",
             "cwd" : "${workspaceFolder}",
             "console": "integratedTerminal",
             "justMyCode": false
